@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-
+#hola
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await database.connect()

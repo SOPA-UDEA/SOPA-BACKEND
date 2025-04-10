@@ -1,12 +1,14 @@
 
 
 
-from pydantic import BaseSettings
+# from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 from prisma import Prisma
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 database = Prisma(auto_register=True)
+
 async def get_database():
     yield database
 

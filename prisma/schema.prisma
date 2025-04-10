@@ -1,0 +1,19 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-py"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Pensum {
+  id    Int    @id @default(autoincrement())
+  faculty  String
+  modality String
+  campus String
+  academic_program String
+  version  String @unique
+}

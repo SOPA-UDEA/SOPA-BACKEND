@@ -1,0 +1,70 @@
+generator client {
+  provider                    = "prisma-client-py"
+  enable_experimental_decimal = "true"
+  recursive_type_depth        = "5"
+  interface                   = "asyncio"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model academic_program {
+  id          Int        @id @default(autoincrement())
+  name        String     @db.VarChar(150)
+  code        String?    @db.VarChar(150)
+  headquarter String     @db.VarChar(150)
+  version     Int
+
+  department  department @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "department_id")
+  faculty     faculty    @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "faculty_id")
+  modality    modality   @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "modality_id")
+  pensum      pensum?
+}
+
+model classroom {
+  id             Int      @id @default(autoincrement())
+  capacity       Int?
+  location       String?  @db.VarChar(150)
+  own_department Boolean?
+  virtual_mode   Boolean?
+}
+
+model department {
+  id               Int               @id @default(autoincrement())
+  name             String            @db.VarChar(150)
+  internal_key     String?           @db.VarChar(150)
+  academic_program academic_program?
+}
+
+model faculty {
+  id               Int               @id @default(autoincrement())
+  name             String            @db.VarChar(150)
+  internal_key     String?           @db.VarChar(150)
+  academic_program academic_program?
+}
+
+model mirror_group {
+  id   Int     @id @default(autoincrement())
+  name String? @db.VarChar(150)
+}
+
+model modality {
+  id               Int               @id @default(autoincrement())
+  IDE              String            @db.VarChar(150)
+  name             String            @db.VarChar(150)
+  academic_program academic_program?
+}
+
+model pensum {
+  id               Int              @id @default(autoincrement())
+  version          Int
+  academic_program academic_program @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "academic_program_id")
+}
+
+model professor {
+  id             Int     @id @default(autoincrement())
+  name           String  @db.VarChar(150)
+  identification String? @db.VarChar(150)
+}

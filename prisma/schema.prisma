@@ -1,8 +1,8 @@
 generator client {
   provider                    = "prisma-client-py"
   enable_experimental_decimal = "true"
-  recursive_type_depth        = "5"
   interface                   = "asyncio"
+  recursive_type_depth        = "5"
 }
 
 datasource db {
@@ -11,60 +11,129 @@ datasource db {
 }
 
 model academic_program {
-  id          Int        @id @default(autoincrement())
-  name        String     @db.VarChar(150)
-  code        String?    @db.VarChar(150)
-  headquarter String     @db.VarChar(150)
-  version     Int
+  id               Int        @id @default(autoincrement())
+  name             String     @db.VarChar(150)
+  code             String     @db.VarChar(150)
+  modalityAcademic String     @db.VarChar(150)
+  headquarter      String     @db.VarChar(150)
+  version          Int
+  modalityId       Int
+  facultyId        Int
+  departmentId     Int
+  department       department @relation(fields: [departmentId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "departmentId")
+  faculty          faculty    @relation(fields: [facultyId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "facultyId")
+  modality         modality   @relation(fields: [modalityId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "modalityId")
+  pensum           pensum[]
+}
 
-  department  department @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "department_id")
-  faculty     faculty    @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "faculty_id")
-  modality    modality   @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "modality_id")
-  pensum      pensum?
+model academic_schedule {
+  id       Int     @id @default(autoincrement())
+  semester String  @db.VarChar(150)
+  pensumId Int
+  pensum   pensum  @relation(fields: [pensumId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "pensumId")
+  group    group[]
 }
 
 model classroom {
-  id             Int      @id @default(autoincrement())
-  capacity       Int?
-  location       String?  @db.VarChar(150)
-  own_department Boolean?
-  virtual_mode   Boolean?
+  id                Int                 @id @default(autoincrement())
+  capacity          Int
+  location          String              @db.VarChar(150)
+  ownDepartment     Boolean?
+  virtualMode       Boolean?
+  classroom_x_group classroom_x_group[]
+}
+
+model classroom_x_group {
+  id          Int       @id @default(autoincrement())
+  groupId     Int
+  classroomId Int
+  schedule    String    @db.VarChar(150)
+  classroom   classroom @relation(fields: [classroomId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "classroomId")
+  group       group     @relation(fields: [groupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "groupId")
 }
 
 model department {
-  id               Int               @id @default(autoincrement())
-  name             String            @db.VarChar(150)
-  internal_key     String?           @db.VarChar(150)
-  academic_program academic_program?
+  id               Int                @id @default(autoincrement())
+  name             String?            @db.VarChar(150)
+  internalKey      String?            @db.VarChar(150)
+  academic_program academic_program[]
 }
 
 model faculty {
-  id               Int               @id @default(autoincrement())
-  name             String            @db.VarChar(150)
-  internal_key     String?           @db.VarChar(150)
-  academic_program academic_program?
+  id               Int                @id @default(autoincrement())
+  name             String             @db.VarChar(150)
+  internalKey      String?            @db.VarChar(150)
+  academic_program academic_program[]
+}
+
+model group {
+  id                 Int                 @id @default(autoincrement())
+  groupSize          Int
+  modality           String              @db.VarChar(150)
+  code               Int
+  mirrorGroupId      Int
+  subjectId          Int
+  academicScheduleId Int
+  classroom_x_group  classroom_x_group[]
+  academic_schedule  academic_schedule   @relation(fields: [academicScheduleId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "academicScheduleId")
+  mirror_group       mirror_group        @relation(fields: [mirrorGroupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "mirrorGroupId")
+  subject            subject             @relation(fields: [subjectId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "subjectId")
+  group_x_professor  group_x_professor[]
+}
+
+model group_x_professor {
+  id          Int       @id @default(autoincrement())
+  groupId     Int
+  professorId Int
+  group       group     @relation(fields: [groupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "groupId")
+  professor   professor @relation(fields: [professorId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "professorId")
 }
 
 model mirror_group {
-  id   Int     @id @default(autoincrement())
-  name String? @db.VarChar(150)
+  id    Int     @id @default(autoincrement())
+  name  String? @db.VarChar(150)
+  group group[]
 }
 
 model modality {
-  id               Int               @id @default(autoincrement())
-  IDE              String            @db.VarChar(150)
-  name             String            @db.VarChar(150)
-  academic_program academic_program?
+  id               Int                @id @default(autoincrement())
+  IDE              String?            @db.VarChar(150)
+  name             String             @db.VarChar(150)
+  academic_program academic_program[]
 }
 
 model pensum {
-  id               Int              @id @default(autoincrement())
-  version          Int
-  academic_program academic_program @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "academic_program_id")
+  id                Int                 @id @default(autoincrement())
+  version           Int
+  academicProgramId Int
+  academic_schedule academic_schedule[]
+  academic_program  academic_program    @relation(fields: [academicProgramId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "academicProgramId")
+  subject           subject[]
 }
 
 model professor {
-  id             Int     @id @default(autoincrement())
-  name           String  @db.VarChar(150)
-  identification String? @db.VarChar(150)
+  id                Int                 @id @default(autoincrement())
+  name              String              @db.VarChar(150)
+  identification    String?             @db.VarChar(150)
+  group_x_professor group_x_professor[]
+}
+
+model subject {
+  id                 Int      @id @default(autoincrement())
+  level              Int
+  fields             Json     @db.Json
+  code               Int
+  credits            Int
+  weeklyHours        Int
+  weeks              Int
+  validable          Boolean? @default(false)
+  enableable         Boolean? @default(false)
+  preRequirements    Json?    @db.Json
+  coRequirements     Json?    @db.Json
+  creditRequirements Json?    @db.Json
+  name               String   @db.VarChar(150)
+  type               Boolean?
+  pensumId           Int
+  group              group[]
+  pensum             pensum   @relation(fields: [pensumId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "pensumId")
 }

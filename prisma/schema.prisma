@@ -122,7 +122,7 @@ model subject {
   id                 Int      @id @default(autoincrement())
   level              Int
   fields             Json     @db.Json
-  code               Int
+  code               String   @db.VarChar
   credits            Int
   weeklyHours        Int
   weeks              Int
@@ -130,7 +130,7 @@ model subject {
   enableable         Boolean? @default(false)
   preRequirements    Json?    @db.Json
   coRequirements     Json?    @db.Json
-  creditRequirements Json?    @db.Json
+  creditRequirements String?  @db.VarChar
   name               String   @db.VarChar(150)
   type               Boolean?
   pensumId           Int

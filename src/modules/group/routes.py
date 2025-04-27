@@ -3,7 +3,7 @@
 from typing import List
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
-from src.modules.group.services import get_all_groups, add_group, update_group_by_id, delete_group_by_id
+from src.modules.group.services import get_all_groups, add_group, update_group_by_id, delete_group_by_id, get_group_by_code_and_subject_code
 from src.modules.mirror_group.services import create_mirror_group
 import random 
 import string
@@ -55,3 +55,10 @@ async def delete_group(groupId: int):
         return deleted_group
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"Group with id {groupId} not found")
+
+@router.get("/get-bycode-and-subjectcode/{code}/{subject_code}")
+async def find_group_by_code_and_subject_code(code: int, subject_code: str):
+    group = await get_group_by_code_and_subject_code(code, subject_code)
+    if group is None:
+        raise HTTPException(status_code=404, detail="Group not found")
+    return group

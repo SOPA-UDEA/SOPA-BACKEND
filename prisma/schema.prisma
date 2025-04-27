@@ -1,8 +1,8 @@
 generator client {
   provider                    = "prisma-client-py"
+  enable_experimental_decimal = "true"
   interface                   = "asyncio"
   recursive_type_depth        = "5"
-  enable_experimental_decimal = "true"
 }
 
 datasource db {
@@ -36,8 +36,8 @@ model academic_schedule {
 
 model classroom {
   id                Int                 @id @default(autoincrement())
-  capacity          Int
-  location          String              @db.VarChar(150)
+  capacity          Int?
+  location          String              @unique @db.VarChar(150)
   ownDepartment     Boolean?
   virtualMode       Boolean?
   classroom_x_group classroom_x_group[]

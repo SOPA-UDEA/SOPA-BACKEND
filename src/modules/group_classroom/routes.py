@@ -1,6 +1,7 @@
 from typing import List
 from fastapi import APIRouter, File, UploadFile
-from src.modules.group_classroom.services import upload_classroom_x_group, get_classroom_and_schedules
+from src.modules.group_classroom.services import get_classroom_and_schedules
+from src.modules.group_classroom.services.upload_excel import upload_classroom_x_group
 from src.modules.group_classroom.models import ClassroomSchedulesRequest
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse

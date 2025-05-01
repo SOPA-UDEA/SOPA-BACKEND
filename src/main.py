@@ -9,6 +9,7 @@ from src.modules.group.routes import router as group_router
 from src.modules.pensum.routes import router as pensum_router
 from src.modules.subject.routes import router as subject_router
 from src.modules.academic_schedule.routes import router as academic_schedule_router
+from src.modules.academic_program.routes import router as academic_program_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -40,6 +41,8 @@ app.include_router(group_router, prefix="/group")
 app.include_router(pensum_router, prefix="/pensum")
 app.include_router(subject_router, prefix="/subject")
 app.include_router(academic_schedule_router, prefix="/academic_schedule")
+app.include_router(academic_program_router, prefix="/academic_program")
+
 
 app.add_middleware(
     CORSMiddleware,

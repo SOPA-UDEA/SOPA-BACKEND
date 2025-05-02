@@ -2,10 +2,33 @@ import json
 from src.database import database
 import pandas as pd
 from src.modules.pensum.services import get_pensum_by_version_and_program_id
+from src.modules.subject.models import SubjectRequest
 
 
 async def get_all_subjects():
     return await database.subject.find_many()
+
+async def get_subject_by_code(code: str):
+    return await database.subject.find_first(where={"code": code})
+
+async def create_subject(data: SubjectRequest):
+    return await database.subject.create(data={
+        "level": data.level,
+        "fields": json.dumps(data.fields),
+        "code": data.code,
+        "credits": data.credits,
+        "weeklyHours": data.weeklyHours,
+        "weeks": data.weeks,
+        "validable": data.validable,
+        "enableable": data.enableable,
+        "preRequirements": json.dumps(data.preRequirements),
+        "coRequirements": json.dumps(data.coRequirements),
+        "creditRequirements": data.creditRequirements,
+        "name": data.name,
+        "pensum": {
+            "connect": {"id": data.pensumId}
+        }
+    })
 
 async def get_subjects_by_pensum_id(pensum_id: int):
     return await database.subject.find_many(where={"pensumId": pensum_id})

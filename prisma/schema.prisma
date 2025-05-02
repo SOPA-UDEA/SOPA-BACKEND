@@ -36,8 +36,8 @@ model academic_schedule {
 
 model classroom {
   id                Int                 @id @default(autoincrement())
-  capacity          Int
-  location          String              @db.VarChar(150)
+  capacity          Int?
+  location          String              @unique @db.VarChar(150)
   ownDepartment     Boolean?
   virtualMode       Boolean?
   classroom_x_group classroom_x_group[]
@@ -132,7 +132,6 @@ model subject {
   coRequirements     Json?    @db.Json
   creditRequirements String?  @db.VarChar
   name               String   @db.VarChar(150)
-  type               Boolean?
   pensumId           Int
   group              group[]
   pensum             pensum   @relation(fields: [pensumId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "pensumId")

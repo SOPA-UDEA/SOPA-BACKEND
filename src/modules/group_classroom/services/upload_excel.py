@@ -17,7 +17,17 @@ from fastapi import HTTPException
 
 async def upload_classroom_x_group(file: BinaryIO):
 
-    df = pd.read_excel(file, engine="openpyxl")
+    try:
+        # Read the excel file
+        df = pd.read_excel(file, engines="openpyxl")
+    except Exception as e:
+        #clean up memory
+        del df
+        gc.collect()
+        raise HTTPException(
+            status_code=400,
+            detail=f"Error reading excel file: {e}",
+        )
 
     for index, row in df.iterrows():
         # Get the subject code from the row

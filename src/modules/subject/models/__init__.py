@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, Dict
 
+
 class SubjectRequest(BaseModel):
     level: int
     fields: dict

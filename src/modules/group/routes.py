@@ -1,11 +1,15 @@
-
-
 from typing import List
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
-from src.modules.group.services import get_all_groups, add_group, update_group_by_id, delete_group_by_id, get_group_by_code_and_subject_code
+from src.modules.group.services import (
+    get_all_groups,
+    add_group,
+    update_group_by_id,
+    delete_group_by_id,
+    get_group_by_code_and_subject_code,
+)
 from src.modules.mirror_group.services import create_mirror_group
-import random 
+import random
 import string
 from fastapi import HTTPException
 
@@ -18,25 +22,34 @@ class GroupRequest(BaseModel):
     subjectId: int = Field(gt=0)
     academicScheduleId: int = Field(gt=0)
 
+
 class MirrorGroupRequest(BaseModel):
     name: str = Field(min_length=4, max_length=150)
+
 
 router = APIRouter(
     tags=["group"],
 )
 
+
 @router.get("/lists")
 async def create_group_list():
     groups = await get_all_groups()
-    return {"groups": groups }
+    return {"groups": groups}
+
 
 @router.post("/create")
-async def create_group(group_request: GroupRequest, mirror_group_request: MirrorGroupRequest):
-    mirror_group_request.name = ''.join(random.choices(string.ascii_letters + string.digits, k=20))
+async def create_group(
+    group_request: GroupRequest, mirror_group_request: MirrorGroupRequest
+):
+    mirror_group_request.name = "".join(
+        random.choices(string.ascii_letters + string.digits, k=20)
+    )
     mirrorGroup = await create_mirror_group(mirror_group_request.model_dump())
     group_request.mirrorGroupId = mirrorGroup.id
     group = await add_group(group_request.model_dump())
-    return group 
+    return group
+
 
 @router.put("/update/{groupId}")
 async def update_group(groupId: int, group_request: GroupRequest):
@@ -44,17 +57,21 @@ async def update_group(groupId: int, group_request: GroupRequest):
         updated_group = await update_group_by_id(groupId, group_request.model_dump())
         return updated_group
     except Exception as e:
-        raise HTTPException(status_code=404, detail=f"Group with id {groupId} not found")
+        raise HTTPException(
+            status_code=404, detail=f"Group with id {groupId} not found"
+        )
 
-    
-    
+
 @router.delete("/delete/{groupId}")
 async def delete_group(groupId: int):
     try:
         deleted_group = await delete_group_by_id(groupId)
         return deleted_group
     except Exception as e:
-        raise HTTPException(status_code=404, detail=f"Group with id {groupId} not found")
+        raise HTTPException(
+            status_code=404, detail=f"Group with id {groupId} not found"
+        )
+
 
 @router.get("/get-bycode-and-subjectcode/{code}/{subject_code}")
 async def find_group_by_code_and_subject_code(code: int, subject_code: str):

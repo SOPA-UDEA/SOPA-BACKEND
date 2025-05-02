@@ -97,8 +97,8 @@ async def upload_classroom_x_group(file: BinaryIO):
                 print(f"Classroom: {classroom}, Schedule: {schedule}")
                 #check if the object classroom_x_group already exists
                 classroom_x_group = await get_group_classroom(classroomId=classroom_data.id, groupId=group_data.id, schedule=schedule)
-                if classroom_x_group:
-                    print(f"Classroom x group {classroom_x_group} already exists.")
+                if classroom_x_group and classroom_x_group.schedule == schedule:
+                    print(f"Classroom x group {classroom} already exists for group {group_data.code} and schedule {schedule}")
                     continue
 
                 #get days from schedule

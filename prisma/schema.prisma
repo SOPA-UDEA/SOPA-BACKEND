@@ -27,11 +27,9 @@ model academic_program {
 }
 
 model academic_schedule {
-  id       Int     @id @default(autoincrement())
-  semester String  @db.VarChar(150)
-  pensumId Int
-  pensum   pensum  @relation(fields: [pensumId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "pensumId")
-  group    group[]
+  id                       Int                        @id @default(autoincrement())
+  semester                 String                     @db.VarChar(150)
+  academic_schedule_pensum academic_schedule_pensum[]
 }
 
 model classroom {
@@ -67,18 +65,18 @@ model faculty {
 }
 
 model group {
-  id                 Int                 @id @default(autoincrement())
-  groupSize          Int
-  modality           String              @db.VarChar(150)
-  code               Int
-  mirrorGroupId      Int
-  subjectId          Int
-  academicScheduleId Int
-  classroom_x_group  classroom_x_group[]
-  academic_schedule  academic_schedule   @relation(fields: [academicScheduleId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "academicScheduleId")
-  mirror_group       mirror_group        @relation(fields: [mirrorGroupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "mirrorGroupId")
-  subject            subject             @relation(fields: [subjectId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "subjectId")
-  group_x_professor  group_x_professor[]
+  id                       Int                      @id @default(autoincrement())
+  groupSize                Int
+  modality                 String                   @db.VarChar(150)
+  code                     Int
+  mirrorGroupId            Int
+  subjectId                Int
+  academicSchedulePensumId Int
+  classroom_x_group        classroom_x_group[]
+  academic_schedule_pensum academic_schedule_pensum @relation(fields: [academicSchedulePensumId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "academicSchedulePensumId")
+  mirror_group             mirror_group             @relation(fields: [mirrorGroupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "mirrorGroupId")
+  subject                  subject                  @relation(fields: [subjectId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "subjectId")
+  group_x_professor        group_x_professor[]
 }
 
 model group_x_professor {
@@ -103,12 +101,19 @@ model modality {
 }
 
 model pensum {
-  id                Int                 @id @default(autoincrement())
-  version           Int
-  academicProgramId Int
-  academic_schedule academic_schedule[]
-  academic_program  academic_program    @relation(fields: [academicProgramId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "academicProgramId")
-  subject           subject[]
+  id                       Int                        @id @default(autoincrement())
+  version                  Int
+  academicProgramId        Int
+  academic_schedule_pensum academic_schedule_pensum[]
+  academic_program         academic_program           @relation(fields: [academicProgramId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "academicProgramId")
+  subject                  subject[]
+}
+
+model prerequirement {
+  id        Int     @id @default(autoincrement())
+  code      String  @db.VarChar(150)
+  subjectId Int
+  subject   subject @relation(fields: [subjectId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "subjectId")
 }
 
 model professor {
@@ -119,21 +124,29 @@ model professor {
 }
 
 model subject {
-  id                 Int      @id @default(autoincrement())
+  id                 Int              @id @default(autoincrement())
   level              Int
-  fields             Json     @db.Json
-  code               String   @db.VarChar
+  fields             Json             @db.Json
+  code               String           @db.VarChar(150)
   credits            Int
   weeklyHours        Int
   weeks              Int
-  validable          Boolean? @default(false)
-  enableable         Boolean? @default(false)
-  preRequirements    Json?    @db.Json
-  coRequirements     Json?    @db.Json
-  creditRequirements String?  @db.VarChar
-  name               String   @db.VarChar(150)
-  type               Boolean?
+  validable          Boolean?         @default(false)
+  enableable         Boolean?         @default(false)
+  coRequirements     String?          @db.VarChar(150)
+  creditRequirements String?          @db.VarChar(150)
+  name               String           @db.VarChar(150)
   pensumId           Int
   group              group[]
-  pensum             pensum   @relation(fields: [pensumId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "pensumId")
+  prerequirement     prerequirement[]
+  pensum             pensum           @relation(fields: [pensumId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "pensumId")
+}
+
+model academic_schedule_pensum {
+  id                 Int               @id @default(autoincrement())
+  pensumId           Int
+  academicScheduleId Int
+  academic_schedule  academic_schedule @relation(fields: [academicScheduleId], references: [id])
+  pensum             pensum            @relation(fields: [pensumId], references: [id])
+  group              group[]
 }

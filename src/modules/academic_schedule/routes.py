@@ -4,7 +4,6 @@ from src.modules.academic_schedule.services import get_all_academic_schedules, a
 
 class AcademicScheduleRequest(BaseModel):
     semester: str = Field(min_length=4, max_length=150)
-    pensumId: int = Field(gt=0)
 
 router = APIRouter( 
     tags=["academic_schedule"],

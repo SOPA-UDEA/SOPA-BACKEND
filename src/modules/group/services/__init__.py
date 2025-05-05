@@ -20,4 +20,11 @@ async def delete_group_by_id(groupId:int):
         where={"id": groupId}
     )
 
+async def create_academic_schedule_pesnum(data):
+    return await database.academic_schedule_pensum.create(data=data)
+
+async def get_academic_schedule_pensum_by_pensum_id_and_academic_schedule_id(pensum_id: int, academic_schedule_id: int):
+    return await database.academic_schedule_pensum.find_first(where={"pensumId": pensum_id, "academicScheduleId": academic_schedule_id})
+    
+
         

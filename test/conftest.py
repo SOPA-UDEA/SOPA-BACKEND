@@ -1,7 +1,7 @@
-import pytest
+import pytest_asyncio
 from src.database import database
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest_asyncio.fixture(scope="function")
 async def db():
     await database.connect()
     yield

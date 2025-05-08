@@ -8,7 +8,7 @@ from src.modules.mirror_group.services import create_mirror_group
 import random 
 import string
 from fastapi import HTTPException
-
+from starlette import status
 
 class GroupRequest(BaseModel):
     groupSize: int = Field(gt=0)
@@ -18,6 +18,15 @@ class GroupRequest(BaseModel):
     subjectId: int = Field(gt=0)
     academicSchedulePensumId: int = Field(gt=0)
 
+class GroupResponse(BaseModel):
+    id: int
+    groupSize: int
+    modality: str 
+    code: int 
+    mirrorGroupId: int 
+    subjectId: int 
+    academicSchedulePensumId: int 
+    
 class AcademicSchedulePensumRequest(BaseModel):
     pensumId: int = Field(gt=0)
     academicScheduleId: int = Field(gt=0)
@@ -25,55 +34,64 @@ class AcademicSchedulePensumRequest(BaseModel):
 class MirrorGroupRequest(BaseModel):
     name: str = Field(min_length=4, max_length=150)
 
+class GroupCreationRequest(BaseModel):
+    group: GroupRequest
+    mirror: MirrorGroupRequest
+    academic: AcademicSchedulePensumRequest
+
 router = APIRouter(
     tags=["group"],
 )
 
-@router.get("/lists")
+@router.get("/lists", status_code=status.HTTP_200_OK, response_model=List[GroupResponse])
 async def create_group_list():
     groups = await get_all_groups()
-    return {"groups": groups }
+    if not groups:
+        raise HTTPException(status_code=404, detail="No groups found")
+    return groups
 
-@router.post("/create")
-async def create_group(group_request: GroupRequest, mirror_group_request: MirrorGroupRequest, academicSchedulePensumRequest: AcademicSchedulePensumRequest):
-    mirror_group_request.name = ''.join(random.choices(string.ascii_letters + string.digits, k=20))
-    mirrorGroup = await create_mirror_group(mirror_group_request.model_dump())
-    
-    pensum_id = academicSchedulePensumRequest.pensumId
-    academic_schedule_id = academicSchedulePensumRequest.academicScheduleId
+@router.post("/create", status_code=status.HTTP_201_CREATED, response_model=GroupResponse)
+async def create_group(request: GroupCreationRequest):
+    group_request = request.group
+    mirror_group_request = request.mirror
+    academicSchedulePensumRequest = request.academic
+    try:
+        mirror_group_request.name = ''.join(random.choices(string.ascii_letters + string.digits, k=20))
+        mirrorGroup = await create_mirror_group(mirror_group_request.model_dump())
+        
+        pensum_id = academicSchedulePensumRequest.pensumId
+        academic_schedule_id = academicSchedulePensumRequest.academicScheduleId
 
-    academic_schedule_pensum = await get_academic_schedule_pensum_by_pensum_id_and_academic_schedule_id(
-        pensum_id, academic_schedule_id
-    )
+        academic_schedule_pensum = await get_academic_schedule_pensum_by_pensum_id_and_academic_schedule_id(
+            pensum_id, academic_schedule_id
+        )
 
-    if academic_schedule_pensum is None:
-        academic_schedule_pensum_data = academicSchedulePensumRequest.model_dump()
-        academic_schedule_pensum = await create_academic_schedule_pesnum(academic_schedule_pensum_data)
+        if academic_schedule_pensum is None:
+            academic_schedule_pensum_data = academicSchedulePensumRequest.model_dump()
+            academic_schedule_pensum = await create_academic_schedule_pesnum(academic_schedule_pensum_data)
 
-    group_request.mirrorGroupId = mirrorGroup.id
-    group_request.academicSchedulePensumId = academic_schedule_pensum.id
-    group_data = group_request.model_dump()
-    group = await add_group(group_data)
-    return {
-        "group": group,
-        "mirrorGroup": mirrorGroup,
-        "academicSchedulePensum": academic_schedule_pensum
-    } 
+        group_request.mirrorGroupId = mirrorGroup.id
+        group_request.academicSchedulePensumId = academic_schedule_pensum.id
+        group_data = group_request.model_dump()
+        group = await add_group(group_data)
+        return group
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
-@router.put("/update/{groupId}")
+@router.put("/update/{groupId}", status_code=status.HTTP_200_OK, response_model=GroupResponse)
 async def update_group(groupId: int, group_request: GroupRequest):
     try:
         updated_group = await update_group_by_id(groupId, group_request.model_dump())
         return updated_group
     except Exception as e:
-        raise HTTPException(status_code=404, detail=f"Group with id {groupId} not found")
+        raise HTTPException(status_code=422, detail=str(e))
 
     
     
-@router.delete("/delete/{groupId}")
+@router.delete("/delete/{groupId}", status_code=status.HTTP_200_OK)
 async def delete_group(groupId: int):
     try:
-        deleted_group = await delete_group_by_id(groupId)
-        return deleted_group
+        await delete_group_by_id(groupId)
+        return {"detail": "Group deleted successfully"}
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"Group with id {groupId} not found")

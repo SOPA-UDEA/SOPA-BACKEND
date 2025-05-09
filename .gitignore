@@ -1,9 +1,13 @@
 # Python specific
+node_modules/
 __pycache__/
+*.md
 *.py[cod]
 *.pyo
+
 *.pyd
 *.env
+
 *.venv
 env/
 venv/

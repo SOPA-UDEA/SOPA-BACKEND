@@ -26,3 +26,8 @@ async def get_classroom_by_location(location: str) -> Classroom:
     return await database.classroom.find_first(
         where={"location": location}
     )
+
+async def get_classroom_by_id(classroom_id: int) -> Classroom:
+    return await database.classroom.find_first(
+        where={"id": classroom_id}
+    )

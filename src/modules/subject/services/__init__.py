@@ -13,6 +13,9 @@ async def get_subjects_by_pensum_id(pensum_id: int):
 async def get_subject_by_pensum_id_and_code(pensum_id: int, code: str):
     return await database.subject.find_first(where={"pensumId": pensum_id, "code": code})
 
+async def get_subject_by_code(code: str):
+    return await database.subject.find_first(where={"code": code})
+
 async def create_pre_requirements(data):
     return await database.prerequirement.create(data=data)
 

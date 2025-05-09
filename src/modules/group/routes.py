@@ -3,7 +3,7 @@
 from typing import List
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
-from src.modules.group.services import get_all_groups, add_group, update_group_by_id, delete_group_by_id, create_academic_schedule_pesnum, get_academic_schedule_pensum_by_pensum_id_and_academic_schedule_id
+from src.modules.group.services import get_all_groups, add_group, update_group_by_id, delete_group_by_id, create_academic_schedule_pesnum, get_groups_by_academic_schedule_id, get_academic_schedule_pensum_by_pensum_id_and_academic_schedule_id
 from src.modules.mirror_group.services import create_mirror_group
 import random 
 import string
@@ -95,3 +95,14 @@ async def delete_group(groupId: int):
         return {"detail": "Group deleted successfully"}
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"Group with id {groupId} not found")
+
+@router.get("/academic_schedule/{academicScheduleId}/groups", status_code=status.HTTP_200_OK, response_model=List[GroupResponse])
+async def get_groups_by_academic_schedule(academicScheduleId: int):
+    try:
+        print("hola 0")
+        groups = await get_groups_by_academic_schedule_id(academicScheduleId)
+        if not groups:
+            raise HTTPException(status_code=404, detail="No groups found")
+        return groups
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))

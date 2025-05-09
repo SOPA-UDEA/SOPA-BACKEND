@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from src.modules.academic_schedule.services import get_all_academic_schedules, add_academic_schedule, delete_academic_schedule
+from src.modules.academic_schedule.services import get_all_academic_schedules, add_academic_schedule, delete_academic_schedule, get_academic_schedule_by_id
 from starlette import status
 
 
@@ -36,3 +36,10 @@ async def delete_academic_schedule_by_id(academic_schedule_id: int):
     if not academic_schedule:
         raise HTTPException(status_code=404, detail="Academic schedule not found")
     return {"detail": "Academic schedule deleted successfully"}
+
+@router.get("/academic_schedule/{academic_schedule_id}", status_code=status.HTTP_200_OK, response_model=AcademicScheduleResponse)
+async def get_academic_schedule(academic_schedule_id: int):
+    academic_schedule = await get_academic_schedule_by_id(academic_schedule_id)
+    if not academic_schedule:
+        raise HTTPException(status_code=404, detail="Academic schedule not found")
+    return academic_schedule

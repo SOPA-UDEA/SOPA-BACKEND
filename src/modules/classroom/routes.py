@@ -11,18 +11,18 @@ router = APIRouter(
     tags=["classroom"],
 )
 
-@router.get("/list", response_model=List[Classroom])
+@router.get("/list")
 async def get_classroom_list():
     """
     Get a list of classrooms.
     """
     try:
         classrooms = await get_classrooms()
-        return JSONResponse(content=classrooms, status_code=200)
+        return classrooms 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/create", response_model=Classroom, status_code=201)
+@router.post("/create", )
 async def create_classroomReClassroomRequest_endpoint(classroom_request: ClassroomRequest):
     """
     Create a new classroom.

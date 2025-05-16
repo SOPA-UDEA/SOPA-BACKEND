@@ -14,9 +14,20 @@ class GroupRequest(BaseModel):
     groupSize: int = Field(gt=0)
     modality: str = Field(min_length=4, max_length=150)
     code: int = Field(gt=0)
-    mirrorGroupId: int = Field(gt=0)
+    mirrorGroupId: int
     subjectId: int = Field(gt=0)
-    academicSchedulePensumId: int = Field(gt=0)
+    academicSchedulePensumId: int
+class AcademicSchedulePensumRequest(BaseModel):
+    pensumId: int = Field(gt=0)
+    academicScheduleId: int = Field(gt=0)
+
+class MirrorGroupRequest(BaseModel):
+    name: str
+
+class GroupCreationRequest(BaseModel):
+    group: GroupRequest
+    mirror: MirrorGroupRequest
+    academic: AcademicSchedulePensumRequest
 
 class GroupResponse(BaseModel):
     id: int
@@ -26,18 +37,6 @@ class GroupResponse(BaseModel):
     mirrorGroupId: int 
     subjectId: int 
     academicSchedulePensumId: int 
-    
-class AcademicSchedulePensumRequest(BaseModel):
-    pensumId: int = Field(gt=0)
-    academicScheduleId: int = Field(gt=0)
-
-class MirrorGroupRequest(BaseModel):
-    name: str = Field(min_length=4, max_length=150)
-
-class GroupCreationRequest(BaseModel):
-    group: GroupRequest
-    mirror: MirrorGroupRequest
-    academic: AcademicSchedulePensumRequest
 
 router = APIRouter(
     tags=["group"],

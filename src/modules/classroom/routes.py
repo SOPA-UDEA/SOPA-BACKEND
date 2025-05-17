@@ -22,7 +22,7 @@ async def get_classroom_list():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/create", )
+@router.post("/create")
 async def create_classroomReClassroomRequest_endpoint(classroom_request: ClassroomRequest):
     """
     Create a new classroom.

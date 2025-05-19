@@ -1,5 +1,5 @@
 from src.database import database
-from src.modules.classroom.models import Classroom, ClassroomRequest
+from src.modules.classroom.models import Classroom, ClassroomRequest, EnableStatusRequest
 from src.modules.group_classroom.services import get_group_classroom_by_main_classroom_id
 
 async def get_classrooms() -> list[Classroom]:
@@ -24,11 +24,11 @@ async def delete_classroom(classroom_id: int) -> None:
     await database.classroom.delete(where={"id": classroom_id})
 
 async def change_classroom_status(
-    classroom_id: int, enable: bool
+    classroom_id: int, status_request: EnableStatusRequest
 ) -> Classroom:
     classroom_data = await database.classroom.update(
         where={"id": classroom_id},
-        data={"enabled": enable}
+        data=status_request.model_dump()
     )
     return Classroom.model_validate(classroom_data.model_dump())
 

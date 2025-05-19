@@ -13,9 +13,11 @@ from src.modules.academic_program.routes import router as academic_program_route
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await database.connect()
+    if not database.is_connected():
+        await database.connect()
     yield
-    await database.disconnect()
+    if database.is_connected():
+        await database.disconnect()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

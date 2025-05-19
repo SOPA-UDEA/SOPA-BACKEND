@@ -1,6 +1,6 @@
 from typing import List
 from fastapi import APIRouter, File, UploadFile
-from src.modules.classroom.models import Classroom, ClassroomRequest
+from src.modules.classroom.models import Classroom, ClassroomRequest, EnableStatusRequest
 from src.modules.classroom.services import (
     get_classrooms,
     create_classroom,
@@ -88,7 +88,7 @@ async def delete_classroom_endpoint(classroom_id: int):
 
 
 @router.post("/change_status/{classroom_id}", status_code=200)
-async def change_classroom_status_endpoint(classroom_id: int, enable: bool):
+async def change_classroom_status_endpoint(classroom_id: int, enable: EnableStatusRequest):
     """
     Change the status of a classroom.
     """

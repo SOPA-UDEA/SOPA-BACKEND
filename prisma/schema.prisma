@@ -1,8 +1,8 @@
 generator client {
   provider                    = "prisma-client-py"
   recursive_type_depth        = "5"
-  enable_experimental_decimal = "true"
   interface                   = "asyncio"
+  enable_experimental_decimal = "true"
 }
 
 datasource db {
@@ -38,6 +38,7 @@ model classroom {
   location                                                       String              @unique @db.VarChar(150)
   ownDepartment                                                  Boolean?            @default(false)
   virtualMode                                                    Boolean?
+  enabled                                                        Boolean?            @default(true)
   classroom_x_group_classroom_x_group_auxClassroomIdToclassroom  classroom_x_group[] @relation("classroom_x_group_auxClassroomIdToclassroom")
   classroom_x_group_classroom_x_group_mainClassroomIdToclassroom classroom_x_group[] @relation("classroom_x_group_mainClassroomIdToclassroom")
 }

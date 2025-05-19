@@ -21,3 +21,10 @@ async def update_classroom(
 
 async def delete_classroom(classroom_id: int) -> None:
     await database.classroom.delete(where={"id": classroom_id})
+
+async def disable_classroom(classroom_id: int) -> Classroom:
+    classroom_data = await database.classroom.update(
+        where={"id": classroom_id},
+        data={"enabled": False}
+    )
+    return Classroom.model_validate(classroom_data.model_dump())

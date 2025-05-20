@@ -8,9 +8,18 @@ class GroupClassroomRequest(BaseModel):
     mainSchedule: str = Field(..., description="Main schedule of the group")
     auxSchedule: Optional[str] = Field(None, description="Auxiliary schedule ID")
 
+class GroupClassroomResponse(BaseModel):
+    id: int
+    groupId: int
+    mainClassroomId: int
+    auxClassroomId: Optional[int]
+    mainSchedule: str
+    auxSchedule: Optional[str]
+
 class MessageGroupClassroomRequest(BaseModel):
     groupId: int = Field(..., description="ID of the classroom group")
     messageTypeId: int = Field(..., description="ID of the message type")
+    detail: Optional[str] = Field(None, description="Details of the message")
 
 class GroupClassroomRequestAux(BaseModel):
     auxClassroomId: int = Field(..., description="ID of the auxiliary classroom")

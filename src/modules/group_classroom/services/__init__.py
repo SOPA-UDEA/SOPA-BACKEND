@@ -1,8 +1,10 @@
 from src.database import database
+from typing import List
 from src.modules.group_classroom.models import (
     GroupClassroomRequest,
     MessageGroupClassroomRequest,
     GroupClassroomRequestAux,
+    GroupClassroomResponse,
 )
 
 
@@ -34,14 +36,9 @@ async def get_classrooms_and_schedules(main_classroom_id: int, days: list[str]):
     )
 
 
-async def get_all_group_classrooms():
+async def get_all_group_classrooms() -> List[GroupClassroomResponse]:
 
-    return await database.classroom_x_group.find_many(
-        include={
-            "classroom_classroom_x_group_mainClassroomIdToclassroom": True,
-            "group": True,
-        },
-    )
+    return await database.classroom_x_group.find_many()
 
 
 async def get_specific_group_classroom(group_id: int, skip: int, take: int):

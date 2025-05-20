@@ -60,7 +60,7 @@ async def check_collision():
                 if not collision:
                     print(f"Adding collision message for group classroom {current_gc.id}")
                     message = MessageGroupClassroomRequest(
-                        groupId=current_gc.groupId, messageTypeId=5
+                        groupId=current_gc.groupId, messageTypeId=5, detail=None
                     )
                     await add_message_group_classroom(message)
 

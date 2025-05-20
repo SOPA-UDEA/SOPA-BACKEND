@@ -7,6 +7,9 @@ from src.modules.group_classroom.services.upload_excel import upload_excel
 from src.modules.group_classroom.services.update_excel import update_excel
 from src.modules.group_classroom.services.check_collision import check_collision
 from src.modules.group_classroom.services import get_specific_group_classroom
+from src.modules.group_classroom.services.check_schedule_or_classroom_modified import (
+    check_schedule_or_classroom_modified,
+)
 
 router = APIRouter(
     tags=["group_classroom"],
@@ -65,5 +68,19 @@ async def check_collision_route():
 async def find_specific_group_classroom(group_id: int, skip: int = 0, take: int = 10):
     try:
         return await get_specific_group_classroom(group_id, skip, take)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/check-schedule-classroom-modified")
+async def check_group_classroom_modified():
+    try:
+        await check_schedule_or_classroom_modified()
+        return JSONResponse(
+            content={
+                "message": "Check schedule or classroom modified completed successfully"
+            },
+            status_code=200,
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

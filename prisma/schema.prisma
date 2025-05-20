@@ -1,8 +1,8 @@
 generator client {
   provider                    = "prisma-client-py"
+  recursive_type_depth        = "5"
   interface                   = "asyncio"
   enable_experimental_decimal = "true"
-  recursive_type_depth        = "5"
 }
 
 datasource db {
@@ -161,6 +161,7 @@ model message_classroom_group {
   id            Int          @id @default(autoincrement())
   groupId       Int
   messageTypeId Int
+  detail        String?      @db.VarChar
   group         group        @relation(fields: [groupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "groupId")
   message_type  message_type @relation(fields: [messageTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "messageTypeId")
 }

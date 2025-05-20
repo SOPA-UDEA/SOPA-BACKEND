@@ -48,12 +48,12 @@ async def add_message_group_classroom(data: MessageGroupClassroomRequest):
 
 
 async def get_message_group_classroom(
-    classroom_group_id: int,
+    group_id: int,
     message_type: int,
 ):
     return await database.message_classroom_group.find_first(
         where={
-            "classroomGroupId": classroom_group_id,
+            "groupId": group_id,
             "messageTypeId": message_type,
         }
     )

@@ -23,8 +23,8 @@ async def check_collision():
         print(f"validating collision for group classroom {current_gc.id}")
         classroom = await get_classroom_by_id(main_classroom_id)
         if classroom:
-            # If the classroom is virtual, skip it
-            if classroom.location in ("INGENIA", "UDE@"):
+            # If the classroom is virtual or has a specific location in (18325, 18210), skip it
+            if classroom.location in ("INGENIA", "UDE@", "18325", "18210"):
                 continue
 
         group = await get_group_by_id(group_id)
@@ -54,13 +54,13 @@ async def check_collision():
                     f"Collision found between group classroom {current_gc.id} and {other_gc.id} with schedule {other_gc.mainSchedule} and {main_schedule}"
                 )
                 collision = await get_message_group_classroom(
-                    classroom_group_id=current_gc.id,
+                    group_id=current_gc.groupId,
                     message_type=5,
                 )
                 if not collision:
                     print(f"Adding collision message for group classroom {current_gc.id}")
                     message = MessageGroupClassroomRequest(
-                        classroomGroupId=current_gc.id, messageTypeId=5
+                        groupId=current_gc.groupId, messageTypeId=5
                     )
                     await add_message_group_classroom(message)
 

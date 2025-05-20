@@ -11,4 +11,7 @@ class GroupClassroomRequest(BaseModel):
 class MessageGroupClassroomRequest(BaseModel):
     groupId: int = Field(..., description="ID of the classroom group")
     messageTypeId: int = Field(..., description="ID of the message type")
-    
+
+class GroupClassroomRequestAux(BaseModel):
+    auxClassroomId: int = Field(..., description="ID of the auxiliary classroom")
+    auxSchedule: str = Field(..., description="Auxiliary schedule ID")

@@ -2,6 +2,7 @@ from src.database import database
 from src.modules.group_classroom.models import (
     GroupClassroomRequest,
     MessageGroupClassroomRequest,
+    GroupClassroomRequestAux,
 )
 
 
@@ -43,6 +44,19 @@ async def get_all_group_classrooms():
     )
 
 
+async def get_specific_group_classroom(group_id: int, skip: int, take: int):
+    return await database.classroom_x_group.find_many(
+        where={
+            "groupId": group_id,
+        },
+        skip=skip,
+        take=take,
+        order={
+            "id": "asc",
+        },
+    )
+
+
 async def add_message_group_classroom(data: MessageGroupClassroomRequest):
     return await database.message_classroom_group.create(data=data.model_dump())
 
@@ -56,4 +70,26 @@ async def get_message_group_classroom(
             "groupId": group_id,
             "messageTypeId": message_type,
         }
+    )
+
+
+async def update_group_classroom_aux(
+    group_classroom_id: int, data: GroupClassroomRequestAux
+):
+    return await database.classroom_x_group.update(
+        where={
+            "id": group_classroom_id,
+        },
+        data=data.model_dump(),
+    )
+
+
+async def get_group_classroom_by_group_id(group_id: int):
+    return await database.classroom_x_group.find_many(
+        where={
+            "groupId": group_id,
+        },
+        order={
+            "id": "asc",
+        },
     )

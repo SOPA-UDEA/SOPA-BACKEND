@@ -7,9 +7,16 @@ from src.modules.group.services import get_group_by_code_and_subject_code
 from src.modules.group_classroom.services import (
     update_group_classroom_aux,
     get_group_classroom_by_group_id,
+    update_group_classroom,
+    add_message_group_classroom
 )
 from src.modules.classroom.services import get_classroom_by_location
-from src.modules.group_classroom.models import GroupClassroomRequestAux
+from src.modules.group_classroom.models import (
+    GroupClassroomRequestAux,
+    GroupClassroomRequest,
+    GroupClassroomResponse,
+    MessageGroupClassroomRequest
+)
 
 
 async def update_excel(file: BinaryIO):
@@ -121,8 +128,30 @@ async def update_excel(file: BinaryIO):
                         detail=f"Classroom {classroom} not found in the database",
                     )
                 # check if classroom_x_group exists in the database
-                classroom_x_group = group_classrooms[index]
+                classroom_x_group: GroupClassroomResponse = group_classrooms[index]
                 print(f"classroom_x_group: {classroom_x_group}")
+                # This ids mean that the group does not have a main classroom set
+                if classroom_x_group.mainClassroomId in (410, 412, 413):
+                    # update the main classroom for the group classroom
+                    update_data = GroupClassroomRequest(
+                        groupId=classroom_x_group.groupId,
+                        mainClassroomId=classroom_data.id,
+                        mainSchedule=classroom_x_group.mainSchedule,
+                        auxSchedule=schedule,
+                        auxClassroomId=classroom_data.id,
+                    )
+                    await update_group_classroom(
+                        group_classroom_id=classroom_x_group.id, data=update_data
+                    )
+                    # add message to the database
+                    message = MessageGroupClassroomRequest(
+                        groupId=classroom_x_group.groupId,
+                        messageTypeId=3,
+                        detail=f'Classroom {classroom} set ',
+                    )
+                    await add_message_group_classroom(message)
+                    continue
+
                 # update the classroom_x_group with the new classroom and schedule
                 update_data = GroupClassroomRequestAux(
                     auxClassroomId=classroom_data.id,

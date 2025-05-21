@@ -90,3 +90,13 @@ async def get_group_classroom_by_group_id(group_id: int):
             "id": "asc",
         },
     )
+
+async def update_group_classroom(
+    group_classroom_id: int, data: GroupClassroomRequest
+):
+    return await database.classroom_x_group.update(
+        where={
+            "id": group_classroom_id,
+        },
+        data=data.model_dump(),
+    )

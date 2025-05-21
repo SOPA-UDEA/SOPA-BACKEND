@@ -56,6 +56,7 @@ async def check_collision():
                 collision = await get_message_group_classroom(
                     group_id=current_gc.groupId,
                     message_type=5,
+                    detail= f'Collision with group classroom {other_gc.id} and schedule {other_gc.mainSchedule}',
                 )
                 if not collision:
                     print(f"Adding collision message for group classroom {current_gc.id}")

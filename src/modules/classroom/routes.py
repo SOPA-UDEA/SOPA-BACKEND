@@ -87,7 +87,7 @@ async def delete_classroom_endpoint(classroom_id: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/change_status/{classroom_id}", status_code=200)
+@router.put("/change_status/{classroom_id}", status_code=200)
 async def change_classroom_status_endpoint(classroom_id: int, enable: EnableStatusRequest):
     """
     Change the status of a classroom.

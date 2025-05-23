@@ -10,6 +10,9 @@ from src.modules.group_classroom.models import (
 
 async def get_group_classroom_by_main_classroom_id_and_group_id_and_main_schedule(
     main_classroom_id: int, group_id: int, main_schedule: str
+
+async def get_group_classroom_by_main_classroom_id(
+    main_classroom_id: int,
 ):
     return await database.classroom_x_group.find_first(
         where={

@@ -53,6 +53,7 @@ model classroom_x_group {
   classroom_classroom_x_group_auxClassroomIdToclassroom  classroom? @relation("classroom_x_group_auxClassroomIdToclassroom", fields: [auxClassroomId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "classroomId")
   group                                                  group      @relation(fields: [groupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "groupId")
   classroom_classroom_x_group_mainClassroomIdToclassroom classroom  @relation("classroom_x_group_mainClassroomIdToclassroom", fields: [mainClassroomId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "mainClassroomId")
+
 }
 
 model department {
@@ -164,6 +165,7 @@ model message_classroom_group {
   detail        String?      @db.VarChar
   group         group        @relation(fields: [groupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "groupId")
   message_type  message_type @relation(fields: [messageTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "messageTypeId")
+
 }
 
 model message_type {

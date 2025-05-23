@@ -21,6 +21,7 @@ from src.modules.group_classroom.models import (
 
 async def update_excel(file: BinaryIO):
     CLASSROOMS_NOT_DEFINED = (1, 2, 3)
+    CLASSROOM_SET_MESSAGE_TYPE = 3
 
     try:
         # Read the Excel file into a DataFrame
@@ -147,7 +148,7 @@ async def update_excel(file: BinaryIO):
                     # add message to the database
                     message = MessageGroupClassroomRequest(
                         groupId=classroom_x_group.groupId,
-                        messageTypeId=3,
+                        messageTypeId=CLASSROOM_SET_MESSAGE_TYPE,
                         detail=f'Classroom {classroom} set ',
                     )
                     await add_message_group_classroom(message)

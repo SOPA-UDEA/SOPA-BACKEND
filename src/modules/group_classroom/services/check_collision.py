@@ -4,6 +4,7 @@ from src.modules.group_classroom.services import (
     get_all_group_classrooms,
     add_message_group_classroom,
     get_message_group_classroom,
+    delete_message_group_classroom,
 )
 from src.modules.group.services import (
     get_all_groups_by_mirror_group_id,
@@ -15,6 +16,8 @@ from src.modules.classroom.services import get_classroom_by_id
 async def check_collision():
     VIRTUAL_CLASSROOMS = ("INGENIA", "UDE@")
     CLASSROOM_WITH_ROOM = ("18325", "18210")
+    CLASSROOM_UNDEFINED = ("BUSCAR AULA", "BUSCAR AULA CON MEDIOS", "BUSCAR SALA DE CÓMPUTO")
+    COLLISION_MESSAGE_TYPE = 7
     group_classrooms = await get_all_group_classrooms()
     print("Checking for collisions...")
     for current_gc in group_classrooms:
@@ -29,6 +32,7 @@ async def check_collision():
             if (
                 classroom.location in VIRTUAL_CLASSROOMS
                 or classroom.location in CLASSROOM_WITH_ROOM
+                or classroom.location in CLASSROOM_UNDEFINED
             ):
                 print(f"Skipping classroom {classroom.location}")
                 continue
@@ -51,21 +55,32 @@ async def check_collision():
             # Avoid checking mirror groups and the same group
             if other_gc.groupId == group_id or other_gc.groupId in mirror_group_ids:
                 continue
+
+            collision = await get_message_group_classroom(
+                group_id=current_gc.groupId, message_type=COLLISION_MESSAGE_TYPE
+            )
             # Check if the schedules have a conflict
             if has_conflict(main_schedule, other_gc.mainSchedule):
-                collision = await get_message_group_classroom(
-                    group_id=current_gc.groupId, message_type=7
-                )
+
                 if not collision:
                     print(
                         f"Adding collision message for group classroom {current_gc.id}"
                     )
                     message = MessageGroupClassroomRequest(
                         groupId=current_gc.groupId,
-                        messageTypeId=7,
+                        messageTypeId=COLLISION_MESSAGE_TYPE,
                         detail=f"Collision with group classroom {other_gc.id} and schedule {other_gc.mainSchedule}",
                     )
                     await add_message_group_classroom(message)
+            else:
+                # If the schedules do not have a conflict, remove the message
+                if collision:
+                    print(
+                        f"Removing collision message for group classroom {current_gc.id}"
+                    )
+                    await delete_message_group_classroom(
+                        group_id=current_gc.groupId, message_type=COLLISION_MESSAGE_TYPE
+                    )
 
 
 def get_days_from_schedule(schedule: str):

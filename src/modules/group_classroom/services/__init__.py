@@ -69,6 +69,17 @@ async def get_message_group_classroom(
         }
     )
 
+async def delete_message_group_classroom(
+    group_id: int,
+    message_type: int,
+):
+    return await database.message_classroom_group.delete_many(
+        where={
+            "groupId": group_id,
+            "messageTypeId": message_type,
+        }
+    )
+
 
 async def update_group_classroom_aux(
     group_classroom_id: int, data: GroupClassroomRequestAux

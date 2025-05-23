@@ -40,7 +40,14 @@ async def get_all_group_classrooms() -> List[GroupClassroomResponse]:
 
     return await database.classroom_x_group.find_many()
 
-
+async def get_group_classroom_by_main_classroom_id(
+    main_classroom_id: int,
+):
+    return await database.classroom_x_group.find_first(
+        where={
+            "mainClassroomId": main_classroom_id,
+        },
+    )
 async def get_specific_group_classroom(group_id: int, skip: int, take: int):
     return await database.classroom_x_group.find_many(
         where={

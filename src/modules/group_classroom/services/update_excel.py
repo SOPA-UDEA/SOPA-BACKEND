@@ -20,6 +20,7 @@ from src.modules.group_classroom.models import (
 
 
 async def update_excel(file: BinaryIO):
+    CLASSROOMS_NOT_DEFINED = (1, 2, 3)
 
     try:
         # Read the Excel file into a DataFrame
@@ -131,7 +132,7 @@ async def update_excel(file: BinaryIO):
                 classroom_x_group: GroupClassroomResponse = group_classrooms[index]
                 print(f"classroom_x_group: {classroom_x_group}")
                 # This ids mean that the group does not have a main classroom set
-                if classroom_x_group.mainClassroomId in (410, 412, 413):
+                if classroom_x_group.mainClassroomId in CLASSROOMS_NOT_DEFINED:
                     # update the main classroom for the group classroom
                     update_data = GroupClassroomRequest(
                         groupId=classroom_x_group.groupId,

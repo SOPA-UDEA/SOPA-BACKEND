@@ -63,7 +63,7 @@ async def upload_excel(file: BinaryIO):
                 groupSize=int(row["CUPO"]),
                 modality="PRESENCIAL",
                 subjectId=subject.id,
-                academicSchedulePensumId=3,
+                academicSchedulePensumId=4,
                 mirrorGroupId=None,
             )
             group = await add_group(new_group)

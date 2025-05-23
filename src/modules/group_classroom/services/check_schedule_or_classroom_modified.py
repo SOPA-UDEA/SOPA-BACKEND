@@ -35,7 +35,7 @@ async def check_schedule_or_classroom_modified():
                     #create message
                     message = MessageGroupClassroomRequest(
                         groupId=group_id,
-                        messageTypeId=1,
+                        messageTypeId=2,
                         detail=f"Group {group_id} has a modified schedule: {gc.auxSchedule}",
                 )
                     await add_message_group_classroom(message)
@@ -51,7 +51,7 @@ async def check_schedule_or_classroom_modified():
                     #create message
                     message = MessageGroupClassroomRequest(
                         groupId=group_id,
-                        messageTypeId=2,
+                        messageTypeId=1,
                         detail=f"Group {group_id} has a modified classroom: {gc.auxClassroomId}",
                     )
                     await add_message_group_classroom(message)

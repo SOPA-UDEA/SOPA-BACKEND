@@ -6,9 +6,9 @@ from fastapi import HTTPException
 from src.modules.classroom.models import ClassroomRequest
 from src.modules.classroom.services import create_classroom
 
-OWN_DEPARTMENT = "18"
 
 async def upload_classrooms_from_excel(file: BinaryIO) -> dict:
+    OWN_DEPARTMENT = "18"
     """
     Upload classrooms from an Excel file.
     """

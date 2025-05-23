@@ -7,8 +7,9 @@ from src.modules.subject.services import insert_subject_from_excel
 
 async def main():
     await database.connect()  # Conexión al cliente Prisma
-    await insert_pensum_from_excel()
-    await insert_subject_from_excel()
+    # await insert_pensum_from_excel()
+    # await insert_subject_from_excel() 
+    await insert_subject_from_excel() # segunda llamada para leer los prerequisitos
     await database.disconnect()  # Desconexión segura
 
 if __name__ == "__main__":

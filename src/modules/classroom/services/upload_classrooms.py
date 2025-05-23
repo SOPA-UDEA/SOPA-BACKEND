@@ -6,15 +6,15 @@ from fastapi import HTTPException
 from src.modules.classroom.models import ClassroomRequest
 from src.modules.classroom.services import create_classroom
 
-OWN_DEPARTMENT = "18"
 
 async def upload_classrooms_from_excel(file: BinaryIO) -> dict:
+    OWN_DEPARTMENT = "18"
     """
     Upload classrooms from an Excel file.
     """
     try:
         # Read Excel file
-        df = pd.read_excel(file, engine='openpyxl', sheet_name="Sistemas")
+        df = pd.read_excel(file, engine='openpyxl', sheet_name="Matematicas")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error reading Excel file: {str(e)}")
 
@@ -41,6 +41,7 @@ async def upload_classrooms_from_excel(file: BinaryIO) -> dict:
                     location=classroom,
                     ownDepartment=classroom.startswith(OWN_DEPARTMENT),
                     virtualMode=classroom in ("INGENIA", "UDE@"),
+                    enabled=True,
                 )
 
                 # Create the classroom in the database

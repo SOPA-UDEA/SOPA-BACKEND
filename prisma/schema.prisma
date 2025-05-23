@@ -33,21 +33,27 @@ model academic_schedule {
 }
 
 model classroom {
-  id                Int                 @id @default(autoincrement())
-  capacity          Int
-  location          String              @db.VarChar(150)
-  ownDepartment     Boolean?
-  virtualMode       Boolean?
-  classroom_x_group classroom_x_group[]
+  id                                                             Int                 @id @default(autoincrement())
+  capacity                                                       Int?
+  location                                                       String              @unique @db.VarChar(150)
+  ownDepartment                                                  Boolean?            @default(false)
+  virtualMode                                                    Boolean?
+  enabled                                                        Boolean?            @default(true)
+  classroom_x_group_classroom_x_group_auxClassroomIdToclassroom  classroom_x_group[] @relation("classroom_x_group_auxClassroomIdToclassroom")
+  classroom_x_group_classroom_x_group_mainClassroomIdToclassroom classroom_x_group[] @relation("classroom_x_group_mainClassroomIdToclassroom")
 }
 
 model classroom_x_group {
-  id          Int       @id @default(autoincrement())
-  groupId     Int
-  classroomId Int
-  schedule    String    @db.VarChar(150)
-  classroom   classroom @relation(fields: [classroomId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "classroomId")
-  group       group     @relation(fields: [groupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "groupId")
+  id                                                     Int                       @id @default(autoincrement())
+  groupId                                                Int
+  auxClassroomId                                         Int?
+  mainSchedule                                           String                    @db.VarChar(150)
+  mainClassroomId                                        Int
+  auxSchedule                                            String?                   @db.VarChar(150)
+  classroom_classroom_x_group_auxClassroomIdToclassroom  classroom?                @relation("classroom_x_group_auxClassroomIdToclassroom", fields: [auxClassroomId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "classroomId")
+  group                                                  group                     @relation(fields: [groupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "groupId")
+  classroom_classroom_x_group_mainClassroomIdToclassroom classroom                 @relation("classroom_x_group_mainClassroomIdToclassroom", fields: [mainClassroomId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "mainClassroomId")
+  message_classroom_group                                message_classroom_group[]
 }
 
 model department {
@@ -72,6 +78,8 @@ model group {
   mirrorGroupId            Int
   subjectId                Int
   academicSchedulePensumId Int
+  maxSize                  Int
+  registeredPlaces         Int
   classroom_x_group        classroom_x_group[]
   academic_schedule_pensum academic_schedule_pensum @relation(fields: [academicSchedulePensumId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "academicSchedulePensumId")
   mirror_group             mirror_group             @relation(fields: [mirrorGroupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "mirrorGroupId")
@@ -149,4 +157,18 @@ model academic_schedule_pensum {
   academic_schedule  academic_schedule @relation(fields: [academicScheduleId], references: [id])
   pensum             pensum            @relation(fields: [pensumId], references: [id])
   group              group[]
+}
+
+model message_classroom_group {
+  id                Int               @id @default(autoincrement())
+  classroomGroupId  Int
+  messageTypeId     Int
+  classroom_x_group classroom_x_group @relation(fields: [classroomGroupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "classroomGroupId")
+  message_type      message_type      @relation(fields: [messageTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "messageTypeId")
+}
+
+model message_type {
+  id                      Int                       @id(map: "conflict_type_pkey") @default(autoincrement())
+  name                    String                    @db.VarChar(150)
+  message_classroom_group message_classroom_group[]
 }

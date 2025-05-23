@@ -3,7 +3,7 @@
 from typing import List
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
-from src.modules.group.services import get_all_groups, add_group, update_group_by_id, delete_group_by_id, create_academic_schedule_pesnum, get_groups_by_academic_schedule_id, get_academic_schedule_pensum_by_pensum_id_and_academic_schedule_id
+from src.modules.group.services import get_all_groups, add_group, update_group_by_id, delete_group_by_id, create_academic_schedule_pesnum, get_groups_by_academic_schedule_id, get_academic_schedule_pensum_by_pensum_id_and_academic_schedule_id, create_classroom_x_group
 from src.modules.mirror_group.services import create_mirror_group
 import random 
 import string
@@ -17,6 +17,10 @@ class GroupRequest(BaseModel):
     mirrorGroupId: int
     subjectId: int = Field(gt=0)
     academicSchedulePensumId: int
+    maxSize: int
+    registeredPlaces: int
+
+
 class AcademicSchedulePensumRequest(BaseModel):
     pensumId: int = Field(gt=0)
     academicScheduleId: int = Field(gt=0)
@@ -29,6 +33,32 @@ class GroupCreationRequest(BaseModel):
     mirror: MirrorGroupRequest
     academic: AcademicSchedulePensumRequest
 
+class MirrorGroupResponse(BaseModel):
+    id: int
+    name: str
+
+class AcademicProgramResponse(BaseModel):
+    modalityAcademic: str
+class PensumResponse(BaseModel):
+    academic_program: AcademicProgramResponse
+
+class SubjectResponse(BaseModel):
+    id: int
+    name: str
+    level: int
+    code: str
+    pensum: PensumResponse
+
+class ClassroomResponse(BaseModel):
+    id: int
+    location: str
+    capacity: int
+
+class ClassroomXGroupResponse(BaseModel):
+    id: int
+    mainSchedule: str
+    # classroom_x_group_classroom_x_group_mainClassroomIdToclassroom: ClassroomResponse
+
 class GroupResponse(BaseModel):
     id: int
     groupSize: int
@@ -36,7 +66,12 @@ class GroupResponse(BaseModel):
     code: int 
     mirrorGroupId: int 
     subjectId: int 
-    academicSchedulePensumId: int 
+    academicSchedulePensumId: int
+    mirror_group: MirrorGroupResponse
+    subject: SubjectResponse
+    maxSize: int
+    registeredPlaces: int
+    classroom_x_group: List[ClassroomXGroupResponse]
 
 router = APIRouter(
     tags=["group"],
@@ -49,15 +84,15 @@ async def create_group_list():
         raise HTTPException(status_code=404, detail="No groups found")
     return groups
 
-@router.post("/create", status_code=status.HTTP_201_CREATED, response_model=GroupResponse)
+@router.post("/create", status_code=status.HTTP_201_CREATED)
 async def create_group(request: GroupCreationRequest):
     group_request = request.group
     mirror_group_request = request.mirror
     academicSchedulePensumRequest = request.academic
     try:
+
         mirror_group_request.name = ''.join(random.choices(string.ascii_letters + string.digits, k=20))
         mirrorGroup = await create_mirror_group(mirror_group_request.model_dump())
-        
         pensum_id = academicSchedulePensumRequest.pensumId
         academic_schedule_id = academicSchedulePensumRequest.academicScheduleId
 
@@ -73,7 +108,13 @@ async def create_group(request: GroupCreationRequest):
         group_request.academicSchedulePensumId = academic_schedule_pensum.id
         group_data = group_request.model_dump()
         group = await add_group(group_data)
-        return group
+        classroom_x_group = {
+            "mainSchedule": "L10-12|M10-12",
+            "mainClassroomId": 1,
+            "groupId": group.id,
+        }
+        await create_classroom_x_group(classroom_x_group)
+        return 'Group created successfully'
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
 
@@ -98,7 +139,6 @@ async def delete_group(groupId: int):
 @router.get("/academic_schedule/{academicScheduleId}/groups", status_code=status.HTTP_200_OK, response_model=List[GroupResponse])
 async def get_groups_by_academic_schedule(academicScheduleId: int):
     try:
-        print("hola 0")
         groups = await get_groups_by_academic_schedule_id(academicScheduleId)
         if not groups:
             raise HTTPException(status_code=404, detail="No groups found")

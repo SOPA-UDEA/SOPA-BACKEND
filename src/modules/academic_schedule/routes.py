@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from src.modules.academic_schedule.services import get_all_academic_schedules, add_academic_schedule, delete_academic_schedule, get_academic_schedule_by_id
+from src.modules.academic_schedule.services import get_all_academic_schedules, add_academic_schedule, delete_academic_schedule, get_academic_schedule_by_id, get_academic_schedule_by_semester
+from src.modules.group.services import get_academic_schedule_pensum_by_pensum_id_and_academic_schedule_id
 from starlette import status
 
 
@@ -43,3 +44,11 @@ async def get_academic_schedule(academic_schedule_id: int):
     if not academic_schedule:
         raise HTTPException(status_code=404, detail="Academic schedule not found")
     return academic_schedule
+
+@router.get("/academic_schedule/{academic_schedule_semester}/{pensumId}", status_code=status.HTTP_200_OK)
+async def get_academic_schedule_pensum_by_name_and_pensum_id(academic_schedule_semester: str, pensumId: int):
+    academic_schedule = await get_academic_schedule_by_semester(academic_schedule_semester)
+    academic_schedule_pensum = await get_academic_schedule_pensum_by_pensum_id_and_academic_schedule_id(pensumId, academic_schedule.id)
+    if not academic_schedule_pensum:
+        raise HTTPException(status_code=404, detail="Academic schedule not found")
+    return academic_schedule_pensum

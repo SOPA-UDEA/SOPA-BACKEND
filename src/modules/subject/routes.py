@@ -8,6 +8,11 @@ router = APIRouter(
     tags=["subject"],
 )
 
+class prerequisiteResponse(BaseModel):
+    id:int
+    code:str
+    subjectId:int
+
 class SubjectResponse(BaseModel):
     id: int
     name: str
@@ -22,14 +27,14 @@ class SubjectResponse(BaseModel):
     coRequirements: str
     creditRequirements: Optional[str]
     pensumId: int
-    
+    prerequirement: Optional[list[prerequisiteResponse]]
 
-@router.get("/lists",status_code=status.HTTP_200_OK ,response_model=list[SubjectResponse])
-async def read_all_subjects():
-    subjects = await get_all_subjects()
-    if subjects is not None:
-        return subjects
-    raise HTTPException(status_code=404, detail="No subjects found")
+# @router.get("/lists",status_code=status.HTTP_200_OK ,response_model=list[SubjectResponse])
+# async def read_all_subjects():
+#     subjects = await get_all_subjects()
+#     if subjects is not None:
+#         return subjects
+#     raise HTTPException(status_code=404, detail="No subjects found")
     
 @router.get("/by_pensum/{pensumId}",status_code=status.HTTP_200_OK, response_model=list[SubjectResponse])
 async def read_subjects_by_pensum(pensumId: int):

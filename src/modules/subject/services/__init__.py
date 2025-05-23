@@ -5,10 +5,19 @@ from src.modules.pensum.services import get_pensum_by_version_and_program_id
 import asyncio
 
 async def get_all_subjects():
-    return await database.subject.find_many()
+    return await database.subject.find_many(
+        include={
+            "prerequirement": True
+        }
+    )
 
 async def get_subjects_by_pensum_id(pensum_id: int):
-    return await database.subject.find_many(where={"pensumId": pensum_id})
+    return await database.subject.find_many(
+        where={"pensumId": pensum_id},
+        include={
+            "prerequirement": True
+        }
+    )
 
 async def get_subject_by_pensum_id_and_code(pensum_id: int, code: str):
     return await database.subject.find_first(where={"pensumId": pensum_id, "code": code})

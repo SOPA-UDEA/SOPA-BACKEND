@@ -53,7 +53,6 @@ model classroom_x_group {
   classroom_classroom_x_group_auxClassroomIdToclassroom  classroom? @relation("classroom_x_group_auxClassroomIdToclassroom", fields: [auxClassroomId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "classroomId")
   group                                                  group      @relation(fields: [groupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "groupId")
   classroom_classroom_x_group_mainClassroomIdToclassroom classroom  @relation("classroom_x_group_mainClassroomIdToclassroom", fields: [mainClassroomId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "mainClassroomId")
-
 }
 
 model department {
@@ -71,9 +70,9 @@ model faculty {
 }
 
 model group {
-  id                       Int                      @id @default(autoincrement())
+  id                       Int                       @id @default(autoincrement())
   groupSize                Int
-  modality                 String                   @db.VarChar(150)
+  modality                 String                    @db.VarChar(150)
   code                     Int
   mirrorGroupId            Int
   subjectId                Int
@@ -81,12 +80,11 @@ model group {
   maxSize                  Int
   registeredPlaces         Int
   classroom_x_group        classroom_x_group[]
-  academic_schedule_pensum academic_schedule_pensum @relation(fields: [academicSchedulePensumId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "academicSchedulePensumId")
-  mirror_group             mirror_group             @relation(fields: [mirrorGroupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "mirrorGroupId")
-  subject                  subject                  @relation(fields: [subjectId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "subjectId")
+  academic_schedule_pensum academic_schedule_pensum  @relation(fields: [academicSchedulePensumId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "academicSchedulePensumId")
+  mirror_group             mirror_group              @relation(fields: [mirrorGroupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "mirrorGroupId")
+  subject                  subject                   @relation(fields: [subjectId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "subjectId")
   group_x_professor        group_x_professor[]
-    message_classroom_group  message_classroom_group[]
-
+  message_classroom_group  message_classroom_group[]
 }
 
 model group_x_professor {
@@ -168,7 +166,6 @@ model message_classroom_group {
   detail        String?      @db.VarChar
   group         group        @relation(fields: [groupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "groupId")
   message_type  message_type @relation(fields: [messageTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "messageTypeId")
-
 }
 
 model message_type {

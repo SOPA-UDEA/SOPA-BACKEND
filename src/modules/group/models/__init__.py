@@ -8,3 +8,5 @@ class GroupRequest(BaseModel):
     subjectId: int = Field(..., title="Subject ID", description="The ID of the subject associated with the group")
     academicSchedulePensumId: int = Field(..., title="Academic Schedule ID", description="The ID of the academic schedule associated with the group")
     mirrorGroupId: Optional[int] = Field(None, title="Mirror Group ID", description="The ID of the mirror group associated with the group")
+    maxSize: int = Field(..., title="Max Size", description="The maximum size of the group")
+    registeredPlaces: int = Field(..., title="Registered Places", description="The number of registered places in the group")

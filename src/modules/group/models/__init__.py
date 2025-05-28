@@ -1,12 +1,45 @@
+from typing import List
 from pydantic import BaseModel, Field
-from typing import Optional
+
+from src.modules.subject.schemas import ClassroomXGroupResponse, SubjectResponse
 
 class GroupRequest(BaseModel):
-    code: int = Field(..., title="Group Code", description="The unique code of the group")
-    groupSize: int = Field(..., title="Group Size", description="The size of the group")
-    modality: str = Field(..., title="Modality", description="The modality of the group (e.g., online, in-person)")
-    subjectId: int = Field(..., title="Subject ID", description="The ID of the subject associated with the group")
-    academicSchedulePensumId: int = Field(..., title="Academic Schedule ID", description="The ID of the academic schedule associated with the group")
-    mirrorGroupId: Optional[int] = Field(None, title="Mirror Group ID", description="The ID of the mirror group associated with the group")
-    maxSize: int = Field(..., title="Max Size", description="The maximum size of the group")
-    registeredPlaces: int = Field(..., title="Registered Places", description="The number of registered places in the group")
+    groupSize: int 
+    modality: str 
+    code: int 
+    mirrorGroupId: int
+    subjectId: int 
+    academicSchedulePensumId: int
+    maxSize: int
+    registeredPlaces: int
+
+class AcademicSchedulePensumRequest(BaseModel):
+    pensumId: int = Field(gt=0)
+    academicScheduleId: int = Field(gt=0)
+
+class MirrorGroupRequest(BaseModel):
+    name: str
+
+class GroupCreationRequest(BaseModel):
+    group: GroupRequest
+    mirror: MirrorGroupRequest
+    academic: AcademicSchedulePensumRequest
+
+class MirrorGroupResponse(BaseModel):
+    id: int
+    name: str
+
+class GroupResponse(BaseModel):
+    id: int
+    groupSize: int
+    modality: str 
+    code: int 
+    mirrorGroupId: int 
+    subjectId: int 
+    academicSchedulePensumId: int
+    mirror_group: MirrorGroupResponse
+    subject: SubjectResponse
+    maxSize: int
+    registeredPlaces: int
+    classroom_x_group: List[ClassroomXGroupResponse]
+

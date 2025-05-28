@@ -75,14 +75,14 @@ model group {
   groupSize                Int
   modality                 String                   @db.VarChar(150)
   code                     Int
-  mirrorGroupId            Int
+  mirrorGroupId            Int?
   subjectId                Int
   academicSchedulePensumId Int
   maxSize                  Int
   registeredPlaces         Int
   classroom_x_group        classroom_x_group[]
   academic_schedule_pensum academic_schedule_pensum @relation(fields: [academicSchedulePensumId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "academicSchedulePensumId")
-  mirror_group             mirror_group             @relation(fields: [mirrorGroupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "mirrorGroupId")
+  mirror_group             mirror_group?             @relation(fields: [mirrorGroupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "mirrorGroupId")
   subject                  subject                  @relation(fields: [subjectId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "subjectId")
   group_x_professor        group_x_professor[]
 }

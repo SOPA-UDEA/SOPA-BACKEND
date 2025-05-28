@@ -44,15 +44,16 @@ model classroom {
 }
 
 model classroom_x_group {
-  id                                                     Int        @id @default(autoincrement())
+  id                                                     Int                       @id @default(autoincrement())
   groupId                                                Int
   auxClassroomId                                         Int?
-  mainSchedule                                           String     @db.VarChar(150)
+  auxSchedule                                            String?                   @db.VarChar(150)
   mainClassroomId                                        Int
-  auxSchedule                                            String?    @db.VarChar(150)
-  classroom_classroom_x_group_auxClassroomIdToclassroom  classroom? @relation("classroom_x_group_auxClassroomIdToclassroom", fields: [auxClassroomId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "classroomId")
-  group                                                  group      @relation(fields: [groupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "groupId")
-  classroom_classroom_x_group_mainClassroomIdToclassroom classroom  @relation("classroom_x_group_mainClassroomIdToclassroom", fields: [mainClassroomId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "mainClassroomId")
+  mainSchedule                                           String                    @db.VarChar(150)
+  classroom_classroom_x_group_auxClassroomIdToclassroom  classroom?                @relation("classroom_x_group_auxClassroomIdToclassroom", fields: [auxClassroomId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "classroomId")
+  group                                                  group                     @relation(fields: [groupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "groupId")
+  classroom_classroom_x_group_mainClassroomIdToclassroom classroom                 @relation("classroom_x_group_mainClassroomIdToclassroom", fields: [mainClassroomId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "mainClassroomId")
+  message_classroom_group                                message_classroom_group[]
 }
 
 model department {
@@ -70,19 +71,20 @@ model faculty {
 }
 
 model group {
-  id                       Int                       @id @default(autoincrement())
+  id                       Int                      @id @default(autoincrement())
   groupSize                Int
-  modality                 String                    @db.VarChar(150)
+  modality                 String                   @db.VarChar(150)
   code                     Int
-  mirrorGroupId            Int?
+  mirrorGroupId            Int
   subjectId                Int
   academicSchedulePensumId Int
+  maxSize                  Int
+  registeredPlaces         Int
   classroom_x_group        classroom_x_group[]
-  academic_schedule_pensum academic_schedule_pensum  @relation(fields: [academicSchedulePensumId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "academicSchedulePensumId")
-  mirror_group             mirror_group?             @relation(fields: [mirrorGroupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "mirrorGroupId")
-  subject                  subject                   @relation(fields: [subjectId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "subjectId")
+  academic_schedule_pensum academic_schedule_pensum @relation(fields: [academicSchedulePensumId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "academicSchedulePensumId")
+  mirror_group             mirror_group             @relation(fields: [mirrorGroupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "mirrorGroupId")
+  subject                  subject                  @relation(fields: [subjectId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "subjectId")
   group_x_professor        group_x_professor[]
-  message_classroom_group  message_classroom_group[]
 }
 
 model group_x_professor {
@@ -158,12 +160,11 @@ model academic_schedule_pensum {
 }
 
 model message_classroom_group {
-  id            Int          @id @default(autoincrement())
-  groupId       Int
-  messageTypeId Int
-  detail        String?      @db.VarChar
-  group         group        @relation(fields: [groupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "groupId")
-  message_type  message_type @relation(fields: [messageTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "messageTypeId")
+  id                Int               @id @default(autoincrement())
+  classroomGroupId  Int
+  messageTypeId     Int
+  classroom_x_group classroom_x_group @relation(fields: [classroomGroupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "classroomGroupId")
+  message_type      message_type      @relation(fields: [messageTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "messageTypeId")
 }
 
 model message_type {

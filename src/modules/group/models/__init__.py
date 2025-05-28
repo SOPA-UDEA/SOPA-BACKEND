@@ -42,3 +42,4 @@ class GroupResponse(BaseModel):
     maxSize: int
     registeredPlaces: int
     classroom_x_group: List[ClassroomXGroupResponse]
+

@@ -14,7 +14,7 @@ async def upload_classrooms_from_excel(file: BinaryIO) -> dict:
     """
     try:
         # Read Excel file
-        df = pd.read_excel(file, engine='openpyxl', sheet_name="Matematicas")
+        df = pd.read_excel(file, engine='openpyxl', sheet_name="Sistemas")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error reading Excel file: {str(e)}")
 

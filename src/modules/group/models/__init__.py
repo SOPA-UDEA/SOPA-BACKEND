@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from src.modules.subject.schemas import ClassroomXGroupResponse, SubjectResponse
@@ -7,7 +7,7 @@ class GroupRequest(BaseModel):
     groupSize: int 
     modality: str 
     code: int 
-    mirrorGroupId: int
+    mirrorGroupId: Optional[int] = None
     subjectId: int 
     academicSchedulePensumId: int
     maxSize: int

@@ -16,7 +16,11 @@ from src.modules.classroom.services import get_classroom_by_id
 async def check_collision():
     VIRTUAL_CLASSROOMS = ("INGENIA", "UDE@")
     CLASSROOM_WITH_ROOM = ("18325", "18210")
-    CLASSROOM_UNDEFINED = ("BUSCAR AULA", "BUSCAR AULA CON MEDIOS", "BUSCAR SALA DE CÓMPUTO")
+    CLASSROOM_UNDEFINED = (
+        "BUSCAR AULA",
+        "BUSCAR AULA CON MEDIOS",
+        "BUSCAR SALA DE CÓMPUTO",
+    )
     COLLISION_MESSAGE_TYPE = 7
     group_classrooms = await get_all_group_classrooms()
     print("Checking for collisions...")
@@ -69,7 +73,7 @@ async def check_collision():
                     message = MessageGroupClassroomRequest(
                         groupId=current_gc.groupId,
                         messageTypeId=COLLISION_MESSAGE_TYPE,
-                        detail=f"Collision with group classroom {other_gc.id} and schedule {other_gc.mainSchedule}",
+                        detail=f"Collision with group {other_gc.groupId} and schedule {other_gc.mainSchedule}",
                     )
                     await add_message_group_classroom(message)
             else:

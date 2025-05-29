@@ -24,7 +24,9 @@ async def add_group_classroom(data: GroupClassroomRequest):
     return await database.classroom_x_group.create(data=data.model_dump())
 
 
-async def get_classrooms_and_schedules(main_classroom_id: int, days: list[str]):
+async def get_classrooms_and_schedules(
+    main_classroom_id: int, days: list[str]
+) -> List[GroupClassroomResponse]:
     return await database.classroom_x_group.find_many(
         where={
             "mainClassroomId": main_classroom_id,
@@ -40,6 +42,7 @@ async def get_all_group_classrooms() -> List[GroupClassroomResponse]:
 
     return await database.classroom_x_group.find_many()
 
+
 async def get_group_classroom_by_main_classroom_id(
     main_classroom_id: int,
 ):
@@ -48,6 +51,8 @@ async def get_group_classroom_by_main_classroom_id(
             "mainClassroomId": main_classroom_id,
         },
     )
+
+
 async def get_specific_group_classroom(group_id: int, skip: int, take: int):
     return await database.classroom_x_group.find_many(
         where={
@@ -75,6 +80,7 @@ async def get_message_group_classroom(
             "messageTypeId": message_type,
         }
     )
+
 
 async def delete_message_group_classroom(
     group_id: int,
@@ -109,9 +115,8 @@ async def get_group_classroom_by_group_id(group_id: int):
         },
     )
 
-async def update_group_classroom(
-    group_classroom_id: int, data: GroupClassroomRequest
-):
+
+async def update_group_classroom(group_classroom_id: int, data: GroupClassroomRequest):
     return await database.classroom_x_group.update(
         where={
             "id": group_classroom_id,

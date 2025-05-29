@@ -10,11 +10,9 @@ from src.modules.group.services import (
     get_all_groups_by_mirror_group_id,
     get_group_by_id,
 )
-from src.modules.classroom.services import get_classroom_by_id
 
 
 async def check_collision():
-    VIRTUAL_CLASSROOMS = ("INGENIA", "UDE@")
     CLASSROOM_WITH_ROOM = ("18325", "18210")
     CLASSROOM_UNDEFINED = (
         "BUSCAR AULA",
@@ -25,21 +23,19 @@ async def check_collision():
     group_classrooms = await get_all_group_classrooms()
     print("Checking for collisions...")
     for current_gc in group_classrooms:
-        main_classroom_id = current_gc.mainClassroomId
+        main_classroom = current_gc.mainClassroom
         main_schedule = current_gc.mainSchedule
         group_id = current_gc.groupId
 
-        print(f"validating collision for group classroom {current_gc.id}")
-        classroom = await get_classroom_by_id(main_classroom_id)
-        if classroom:
-            # If the classroom is virtual or has a specific location in (18325, 18210), skip it
-            if (
-                classroom.location in VIRTUAL_CLASSROOMS
-                or classroom.location in CLASSROOM_WITH_ROOM
-                or classroom.location in CLASSROOM_UNDEFINED
-            ):
-                print(f"Skipping classroom {classroom.location}")
-                continue
+        print(f"validating collision for group main_classroom {current_gc.id}")
+        # If the main_classroom is virtual or has a specific location in (18325, 18210), skip it
+        if (
+            main_classroom.virtualMode
+            or main_classroom.location in CLASSROOM_WITH_ROOM
+            or main_classroom.location in CLASSROOM_UNDEFINED
+        ):
+            print(f"Skipping main_classroom {main_classroom.location}")
+            continue
 
         group = await get_group_by_id(group_id)
 
@@ -51,11 +47,11 @@ async def check_collision():
         # Get the main schedule of the group
         days = get_days_from_schedule(main_schedule)
         print(f"days: {days}")
-        # search for the classrooms and schedules of the main classroom
-        classrooms_and_schedules = await get_classrooms_and_schedules(
-            main_classroom_id, days
+        # search for the main_classrooms and schedules of the main main_classroom
+        main_classrooms_and_schedules = await get_classrooms_and_schedules(
+            main_classroom.id, days
         )
-        for other_gc in classrooms_and_schedules:
+        for other_gc in main_classrooms_and_schedules:
             # Avoid checking mirror groups and the same group
             if other_gc.groupId == group_id or other_gc.groupId in mirror_group_ids:
                 continue
@@ -68,7 +64,7 @@ async def check_collision():
 
                 if not collision:
                     print(
-                        f"Adding collision message for group classroom {current_gc.id}"
+                        f"Adding collision message for group main_classroom {current_gc.id}"
                     )
                     message = MessageGroupClassroomRequest(
                         groupId=current_gc.groupId,
@@ -80,7 +76,7 @@ async def check_collision():
                 # If the schedules do not have a conflict, remove the message
                 if collision:
                     print(
-                        f"Removing collision message for group classroom {current_gc.id}"
+                        f"Removing collision message for group main_classroom {current_gc.id}"
                     )
                     await delete_message_group_classroom(
                         group_id=current_gc.groupId, message_type=COLLISION_MESSAGE_TYPE

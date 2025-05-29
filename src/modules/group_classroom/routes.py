@@ -10,6 +10,9 @@ from src.modules.group_classroom.services import get_specific_group_classroom
 from src.modules.group_classroom.services.check_schedule_or_classroom_modified import (
     check_schedule_or_classroom_modified,
 )
+from src.modules.group_classroom.services.check_capacity import check_capacity
+from src.modules.group_classroom.services import find_group_classroom_by_id
+
 
 router = APIRouter(
     tags=["group_classroom"],
@@ -82,5 +85,27 @@ async def check_group_classroom_modified():
             },
             status_code=200,
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/check-capacity")
+async def check_capacity_route():
+    try:
+        await check_capacity()
+        return JSONResponse(
+            content={"message": "Capacity check completed successfully"}, status_code=200
+        )
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+@router.get("/find-by-id/{id}")
+async def find_by_id(id: int):
+    try:
+        group_classroom = await find_group_classroom_by_id(id)
+        if not group_classroom:
+            raise HTTPException(status_code=404, detail="Group Classroom not found")
+        return group_classroom
+    except HTTPException as e:
+        raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

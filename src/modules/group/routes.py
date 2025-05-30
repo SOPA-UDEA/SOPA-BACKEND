@@ -2,6 +2,7 @@
 
 from typing import List
 from fastapi import APIRouter
+from src.modules.group_classroom.services import delete_group_classroom
 from src.modules.subject.services import get_subject_by_id
 from src.modules.group.services import get_all_groups, add_group, update_group_by_id, delete_group_by_id, create_academic_schedule_pesnum, get_groups_by_academic_schedule_id, get_academic_schedule_pensum_by_pensum_id_and_academic_schedule_id, create_classroom_x_group
 from src.modules.mirror_group.services import create_mirror_group, get_mirror_group_by_name
@@ -9,7 +10,7 @@ import random
 import string
 from fastapi import HTTPException
 from starlette import status
-from src.modules.group.models import GroupRequest, GroupCreationRequest, GroupResponse
+from src.modules.group.models import GroupRequest, GroupCreationRequest, GroupResponse, GroupUpdateRequest
 
 
 router = APIRouter(
@@ -64,11 +65,10 @@ async def create_group(request: GroupCreationRequest):
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
 
-@router.put("/update/{groupId}", status_code=status.HTTP_200_OK, response_model=GroupResponse)
-async def update_group(groupId: int, group_request: GroupRequest):
+@router.put("/update/{groupId}", status_code=status.HTTP_200_OK)
+async def update_group(groupId: int, group_request: GroupUpdateRequest):
     try:
-        updated_group = await update_group_by_id(groupId, group_request.model_dump())
-        return updated_group
+     await update_group_by_id(groupId, group_request)
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
 
@@ -77,6 +77,7 @@ async def update_group(groupId: int, group_request: GroupRequest):
 @router.delete("/delete/{groupId}", status_code=status.HTTP_200_OK)
 async def delete_group(groupId: int):
     try:
+        await delete_group_classroom(groupId)
         await delete_group_by_id(groupId)
         return {"detail": "Group deleted successfully"}
     except Exception as e:

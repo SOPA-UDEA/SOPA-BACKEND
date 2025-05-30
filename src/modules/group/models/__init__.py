@@ -13,6 +13,12 @@ class GroupRequest(BaseModel):
     maxSize: int
     registeredPlaces: int
 
+class GroupUpdateRequest(BaseModel):
+    groupSize: int 
+    modality: str 
+    maxSize: int
+    registeredPlaces: int
+
 class AcademicSchedulePensumRequest(BaseModel):
     pensumId: int = Field(gt=0)
     academicScheduleId: int = Field(gt=0)

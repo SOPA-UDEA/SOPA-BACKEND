@@ -123,3 +123,10 @@ async def update_group_classroom(group_classroom_id: int, data: GroupClassroomRe
         },
         data=data.model_dump(),
     )
+
+async def delete_group_classroom(group_id: int):
+    return await database.classroom_x_group.delete_many(
+        where={
+            "groupId": group_id,
+        }
+    )

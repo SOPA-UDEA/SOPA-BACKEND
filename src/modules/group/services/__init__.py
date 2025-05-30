@@ -1,6 +1,6 @@
 import json
 from src.database import database
-from src.modules.group.models import GroupRequest
+from src.modules.group.models import GroupRequest, GroupUpdateRequest
 
 
 async def get_all_groups():
@@ -17,8 +17,14 @@ async def add_group(data: GroupRequest):
     return await database.group.create(data=data.model_dump())
 
 
-async def update_group_by_id(groupId: int, data):
-    return await database.group.update(where={"id": groupId}, data=data)
+async def update_group_by_id(groupId: int, data: GroupUpdateRequest):
+    return await database.group.update(where={"id": groupId}, data={
+        "groupSize": data.groupSize,
+        "modality": data.modality,
+        "maxSize": data.maxSize,
+        "registeredPlaces": data.registeredPlaces
+    })
+    
 
 
 async def delete_group_by_id(groupId: int):

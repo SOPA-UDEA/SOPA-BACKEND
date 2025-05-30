@@ -34,6 +34,12 @@ async def get_classrooms_and_schedules(
         },
         include={
             "mainClassroom": True,
+            "group": {
+                "include": {
+                    "mirror_group": True,
+                    "subject": True,
+                }
+            },
         },
     )
 

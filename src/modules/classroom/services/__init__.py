@@ -1,8 +1,9 @@
 from src.database import database
+from typing import List
 from src.modules.classroom.models import Classroom, ClassroomRequest, EnableStatusRequest
 from src.modules.group_classroom.services import get_group_classroom_by_main_classroom_id
 
-async def get_classrooms() -> list[Classroom]:
+async def get_classrooms() -> List[Classroom]:
     return await database.classroom.find_many()
 
 async def create_classroom(classroom_request: ClassroomRequest) -> Classroom:

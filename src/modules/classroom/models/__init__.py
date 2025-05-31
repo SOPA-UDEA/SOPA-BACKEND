@@ -17,6 +17,8 @@ class ClassroomRequest(BaseModel):
     ownDepartment: bool = Field(..., description="Indicates if the classroom is owned by the department")
     virtualMode: bool = Field(..., description="Indicates if the classroom is virtual")
     enabled: Optional[bool] = Field(None, description="Indicates if the classroom is enabled")
+    isPointer: Optional[bool] = Field(None, description="Indicates if the classroom is a pointer classroom")
+    hasRoom: Optional[bool] = Field(None, description="Indicates if the classroom has a room associated with it")
 
 class EnableStatusRequest(BaseModel):
     enabled: bool = Field(..., description="Indicates if the classroom should be enabled or disabled")

@@ -19,6 +19,11 @@ async def get_subjects_by_pensum_id(pensum_id: int):
         }
     )
 
+async def get_subject_by_id(subject_id: int):
+    return await database.subject.find_first(
+        where={"id": subject_id}
+    )
+
 async def get_subject_by_pensum_id_and_code(pensum_id: int, code: str):
     return await database.subject.find_first(where={"pensumId": pensum_id, "code": code})
 

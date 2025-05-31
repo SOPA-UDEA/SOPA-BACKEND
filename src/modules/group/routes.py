@@ -2,8 +2,9 @@
 
 from typing import List
 from fastapi import APIRouter
+from src.modules.subject.services import get_subject_by_id
 from src.modules.group.services import get_all_groups, add_group, update_group_by_id, delete_group_by_id, create_academic_schedule_pesnum, get_groups_by_academic_schedule_id, get_academic_schedule_pensum_by_pensum_id_and_academic_schedule_id, create_classroom_x_group
-from src.modules.mirror_group.services import create_mirror_group
+from src.modules.mirror_group.services import create_mirror_group, get_mirror_group_by_name
 import random 
 import string
 from fastapi import HTTPException
@@ -29,8 +30,18 @@ async def create_group(request: GroupCreationRequest):
     academicSchedulePensumRequest = request.academic
     try:
 
-        mirror_group_request.name = ''.join(random.choices(string.ascii_letters + string.digits, k=20))
-        mirrorGroup = await create_mirror_group(mirror_group_request.model_dump())
+       
+        
+        existing_mirror_group = await get_mirror_group_by_name(mirror_group_request.name)
+
+        if existing_mirror_group:
+            mirrorGroup = existing_mirror_group
+        else:
+            subject = await get_subject_by_id(group_request.subjectId)
+            iniciales = ''.join([p[0] for p in subject.name.split()])
+            mirror_group_request.name = iniciales + ''.join(random.choices(string.ascii_letters + string.digits, k=5))
+            mirrorGroup = await create_mirror_group(mirror_group_request.model_dump())
+
         pensum_id = academicSchedulePensumRequest.pensumId
         academic_schedule_id = academicSchedulePensumRequest.academicScheduleId
 

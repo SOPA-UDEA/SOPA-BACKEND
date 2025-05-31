@@ -10,3 +10,6 @@ async def create_mirror_group(data):
 
 async def get_mirror_group_by_id(mirror_group_id: int):
     return await database.mirror_group.find_unique(where={"id": mirror_group_id})     
+
+async def get_mirror_group_by_name(name: str):
+    return await database.mirror_group.find_first(where={"name": name})

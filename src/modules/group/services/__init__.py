@@ -1,4 +1,3 @@
-import json
 from src.database import database
 from src.modules.group.models import GroupRequest
 

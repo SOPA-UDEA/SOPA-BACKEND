@@ -20,7 +20,7 @@ from src.modules.group_classroom.models import (
 
 
 async def update_excel(file: BinaryIO):
-    CLASSROOMS_NOT_DEFINED = (1, 2, 3)
+
     CLASSROOM_SET_MESSAGE_TYPE = 3
 
     try:
@@ -132,8 +132,8 @@ async def update_excel(file: BinaryIO):
                 # check if classroom_x_group exists in the database
                 classroom_x_group: GroupClassroomResponse = group_classrooms[index]
                 print(f"classroom_x_group: {classroom_x_group}")
-                # This ids mean that the group does not have a main classroom set
-                if classroom_x_group.mainClassroomId in CLASSROOMS_NOT_DEFINED:
+                # This means that the classroom is required to be set
+                if classroom_x_group.mainClassroom.isPointer:
                     # update the main classroom for the group classroom
                     update_data = GroupClassroomRequest(
                         groupId=classroom_x_group.groupId,
@@ -149,7 +149,7 @@ async def update_excel(file: BinaryIO):
                     message = MessageGroupClassroomRequest(
                         groupId=classroom_x_group.groupId,
                         messageTypeId=CLASSROOM_SET_MESSAGE_TYPE,
-                        detail=f'Classroom {classroom} set ',
+                        detail=f'Aula "{classroom_data.location}" definida para o grupo {group_code}',
                     )
                     await add_message_group_classroom(message)
                     continue

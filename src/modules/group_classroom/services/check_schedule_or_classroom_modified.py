@@ -12,7 +12,7 @@ from src.modules.group_classroom.models import MessageGroupClassroomRequest
 async def check_schedule_or_classroom_modified():
     CLASSROOM_MODIFIED_MESSAGE_TYPE = 2
     SCHEDULE_MODIFIED_MESSAGE_TYPE = 1
-    CLASSROOMS_UNDEFINED = (1, 2, 3)
+
     group_classrooms: List[GroupClassroomResponse] = await get_all_group_classrooms()
     print("Checking for modified schedules...")
     # group by group_id
@@ -28,8 +28,8 @@ async def check_schedule_or_classroom_modified():
 
         # check if auxSchedule is in set of mainSchedules
         for gc in group_classroom_list:
-            # if the mainClassroomId is in the set of CLASSROOMS_UNDEFINED, skip it
-            if gc.mainClassroomId in CLASSROOMS_UNDEFINED:
+            # if the mainClassroomId is a pointer, skip it
+            if gc.mainClassroom.isPointer:
                 print(f"Skipping classroom {gc.mainClassroomId}")
                 continue
 
@@ -46,7 +46,7 @@ async def check_schedule_or_classroom_modified():
                     message = MessageGroupClassroomRequest(
                         groupId=group_id,
                         messageTypeId=SCHEDULE_MODIFIED_MESSAGE_TYPE,
-                        detail=f"Group {group_id} has a modified schedule: {gc.auxSchedule}",
+                        detail=f"El grupo {group_id} tiene un horario modificado: {gc.auxSchedule}",
                     )
                     await add_message_group_classroom(message)
             else:
@@ -64,14 +64,14 @@ async def check_schedule_or_classroom_modified():
                 message_type=CLASSROOM_MODIFIED_MESSAGE_TYPE,
             )
             if gc.auxClassroomId not in main_classroom_ids:
-                print(f"Group {group_id} has a modified classroom: {gc.auxClassroomId}")
+                print(f"El grupo {group_id} tiene un aula modificada: {gc.auxClassroomId}")
 
                 if not classroomMessage:
                     # create message
                     message = MessageGroupClassroomRequest(
                         groupId=group_id,
                         messageTypeId=CLASSROOM_MODIFIED_MESSAGE_TYPE,
-                        detail=f"Group {group_id} has a modified classroom: {gc.auxClassroomId}",
+                        detail=f"El grupo {group_id} tiene un aula modificada: {gc.auxClassroomId}",
                     )
                     await add_message_group_classroom(message)
             else:

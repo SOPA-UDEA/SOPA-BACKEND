@@ -1,4 +1,3 @@
-import json
 from src.modules.group_proffesor.services import update_group_proffesor
 from src.database import database
 from src.modules.group.models import GroupRequest, GroupUpdateRequest

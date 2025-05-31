@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional
+from src.modules.classroom.models import Classroom
+from src.modules.group.models import GroupResponse
 
 class GroupClassroomRequest(BaseModel):
     groupId: int = Field(..., description="ID of the group")
@@ -15,6 +17,8 @@ class GroupClassroomResponse(BaseModel):
     auxClassroomId: Optional[int]
     mainSchedule: str
     auxSchedule: Optional[str]
+    mainClassroom: Classroom
+    group: GroupResponse
 
 class MessageGroupClassroomRequest(BaseModel):
     groupId: int = Field(..., description="ID of the classroom group")

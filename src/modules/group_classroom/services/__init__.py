@@ -33,14 +33,30 @@ async def get_classrooms_and_schedules(
             "AND": [{"mainSchedule": {"contains": day}} for day in days],
         },
         include={
-            "classroom_classroom_x_group_mainClassroomIdToclassroom": True,
+            "mainClassroom": True,
+            "group": {
+                "include": {
+                    "mirror_group": True,
+                    "subject": True,
+                }
+            },
         },
     )
 
 
 async def get_all_group_classrooms() -> List[GroupClassroomResponse]:
 
-    return await database.classroom_x_group.find_many()
+    return await database.classroom_x_group.find_many(
+        include={
+            "group": {
+                "include": {
+                    "mirror_group": True,
+                    "subject": True,
+                }
+            },
+            "mainClassroom": True,
+        },
+    )
 
 
 async def get_group_classroom_by_main_classroom_id(
@@ -110,6 +126,15 @@ async def get_group_classroom_by_group_id(group_id: int):
         where={
             "groupId": group_id,
         },
+        include={
+            "mainClassroom": True,
+            "group": {
+                "include": {
+                    "mirror_group": True,
+                    "subject": True,
+                }
+            },
+        },
         order={
             "id": "asc",
         },
@@ -129,4 +154,20 @@ async def delete_group_classroom(group_id: int):
         where={
             "groupId": group_id,
         }
+    )
+
+async def find_group_classroom_by_id(group_classroom_id: int) -> GroupClassroomResponse:
+    return await database.classroom_x_group.find_first(
+        where={
+            "id": group_classroom_id,
+        },
+        include={
+            "group": {
+                "include": {
+                    "mirror_group": True,
+                    "subject": True,
+                }
+            },
+            "mainClassroom": True,
+        },
     )

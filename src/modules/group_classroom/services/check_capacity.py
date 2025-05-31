@@ -17,16 +17,11 @@ async def check_capacity():
     print("Checking capacity for group classrooms...")
 
     CAPACITY_EXCEEDED_MESSAGE_TYPE = 4  # Assuming 4 is the type for capacity exceeded
-    CLASSROOM_UNDEFINED = (
-        "BUSCAR AULA",
-        "BUSCAR AULA CON MEDIOS",
-        "BUSCAR SALA DE CÓMPUTO",
-    )
 
     for current_gc in group_classrooms:
         main_classroom = current_gc.mainClassroom
         group = current_gc.group
-        if main_classroom.location in CLASSROOM_UNDEFINED or main_classroom.virtualMode:
+        if main_classroom.isPointer or main_classroom.virtualMode:
             print(
                 f"Skipping group classroom {current_gc.id} due to undefined classroom or virtual mode"
             )
@@ -44,7 +39,7 @@ async def check_capacity():
                 message_data = MessageGroupClassroomRequest(
                     groupId=current_gc.groupId,
                     messageTypeId=CAPACITY_EXCEEDED_MESSAGE_TYPE,
-                    detail=f"Group {group.id} exceeds the capacity of classroom {main_classroom.location}.",
+                    detail=f"El grupo {group.id} supera la capacidad del aula {main_classroom.id} ({group.maxSize}/{main_classroom.capacity} estudiantes)",
                 )
                 await add_message_group_classroom(message_data)
                 print(f"Added message for group {group.id} exceeding capacity")

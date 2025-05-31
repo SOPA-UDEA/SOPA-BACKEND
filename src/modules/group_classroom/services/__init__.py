@@ -126,6 +126,15 @@ async def get_group_classroom_by_group_id(group_id: int):
         where={
             "groupId": group_id,
         },
+        include={
+            "mainClassroom": True,
+            "group": {
+                "include": {
+                    "mirror_group": True,
+                    "subject": True,
+                }
+            },
+        },
         order={
             "id": "asc",
         },

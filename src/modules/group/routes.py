@@ -4,13 +4,14 @@ from typing import List
 from fastapi import APIRouter
 from src.modules.group_classroom.services import delete_group_classroom
 from src.modules.subject.services import get_subject_by_id
-from src.modules.group.services import get_all_groups, add_group, update_group_by_id, delete_group_by_id, create_academic_schedule_pesnum, get_groups_by_academic_schedule_id, get_academic_schedule_pensum_by_pensum_id_and_academic_schedule_id, create_classroom_x_group
+from src.modules.group.services import  get_academic_schedule_pensum_by_pensum_id_and_academic_schedule_id, create_classroom_x_group, get_groups_by_subjectId_and_academicSchedulePenusmId, soft_delete_group
+from src.modules.group.services import get_all_groups, add_group, update_group_by_id, delete_group_by_id, create_academic_schedule_pesnum, get_groups_by_academic_schedule_id, get_group_by_id
 from src.modules.mirror_group.services import create_mirror_group, get_mirror_group_by_name
 import random 
 import string
 from fastapi import HTTPException
 from starlette import status
-from src.modules.group.models import GroupRequest, GroupCreationRequest, GroupResponse, GroupUpdateRequest
+from src.modules.group.models import GroupCreationRequest, GroupResponse, GroupUpdateRequest
 
 
 router = APIRouter(
@@ -30,9 +31,6 @@ async def create_group(request: GroupCreationRequest):
     mirror_group_request = request.mirror
     academicSchedulePensumRequest = request.academic
     try:
-
-       
-        
         existing_mirror_group = await get_mirror_group_by_name(mirror_group_request.name)
 
         if existing_mirror_group:
@@ -56,7 +54,7 @@ async def create_group(request: GroupCreationRequest):
         group_request.academicSchedulePensumId = academic_schedule_pensum.id
         group = await add_group(group_request)
         classroom_x_group = {
-            "mainSchedule": "L10-12|M10-12",
+            "mainSchedule": "L10-12",
             "mainClassroomId": 1,
             "groupId": group.id,
         }
@@ -65,21 +63,24 @@ async def create_group(request: GroupCreationRequest):
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
 
-@router.put("/update/{groupId}", status_code=status.HTTP_200_OK)
+@router.put("/update/{groupId}", status_code=status.HTTP_204_NO_CONTENT)
 async def update_group(groupId: int, group_request: GroupUpdateRequest):
     try:
      await update_group_by_id(groupId, group_request)
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
-
-    
     
 @router.delete("/delete/{groupId}", status_code=status.HTTP_200_OK)
 async def delete_group(groupId: int):
     try:
-        await delete_group_classroom(groupId)
-        await delete_group_by_id(groupId)
-        return {"detail": "Group deleted successfully"}
+        group = await get_group_by_id(groupId)
+        groups = await get_groups_by_subjectId_and_academicSchedulePenusmId(group.subjectId, group.academicSchedulePensumId)
+        if len(groups) > 1:
+            await delete_group_classroom(groupId)
+            await delete_group_by_id(groupId)
+            return "Group deleted successfully"
+        await soft_delete_group(groupId)
+        return "Group soft deleted"
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"Group with id {groupId} not found")
 

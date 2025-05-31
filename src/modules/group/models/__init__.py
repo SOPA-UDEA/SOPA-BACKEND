@@ -1,6 +1,7 @@
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
+from src.modules.group_proffesor.models import GroupProfessor
 from src.modules.subject.schemas import ClassroomXGroupResponse, SubjectResponse
 
 class GroupRequest(BaseModel):
@@ -18,6 +19,7 @@ class GroupUpdateRequest(BaseModel):
     modality: str 
     maxSize: int
     registeredPlaces: int
+    professors: List[int]
 
 class AcademicSchedulePensumRequest(BaseModel):
     pensumId: int = Field(gt=0)
@@ -25,7 +27,7 @@ class AcademicSchedulePensumRequest(BaseModel):
 
 class MirrorGroupRequest(BaseModel):
     name: str
-
+    
 class GroupCreationRequest(BaseModel):
     group: GroupRequest
     mirror: MirrorGroupRequest
@@ -48,4 +50,4 @@ class GroupResponse(BaseModel):
     maxSize: int
     registeredPlaces: int
     classroom_x_group: List[ClassroomXGroupResponse]
-
+    group_x_professor: List[GroupProfessor]

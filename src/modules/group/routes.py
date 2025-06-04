@@ -69,14 +69,7 @@ async def create_baseGroups(schedule: int, pensumIds: list[int]):
                 groupData['mirror']['name'] = iniciales + ''.join(random.choices(string.ascii_letters + string.digits, k=5))
                 mirrorGroup = await create_mirror_group(groupData['mirror'])
                 groupData['group']['mirrorGroupId'] = mirrorGroup.id
-                group = await add_group_base(groupData['group'])
-                classroom_x_group = {
-                    "mainSchedule": "",
-                    "mainClassroomId": 1,
-                    "groupId": group.id,
-                }
-                await create_classroom_x_group(classroom_x_group)
-
+                await add_group_base(groupData['group'])
     return "Groups created succsessfuly"
 
 @router.post("/create", status_code=status.HTTP_201_CREATED)
@@ -105,13 +98,7 @@ async def create_group(request: GroupCreationRequest):
             academic_schedule_pensum = await create_schedule_pensum(academicSchedulePensumRequest.model_dump())
         group_request.mirrorGroupId = mirrorGroup.id
         group_request.academicSchedulePensumId = academic_schedule_pensum.id
-        group = await add_group(group_request)
-        classroom_x_group = {
-            "mainSchedule": "",
-            "mainClassroomId": 1,
-            "groupId": group.id,
-        }
-        await create_classroom_x_group(classroom_x_group)
+        await add_group(group_request)
         return 'Group created successfully'
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))

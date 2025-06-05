@@ -24,13 +24,16 @@ class ScheduleCreateResponse(BaseModel):
     schedule_pensum_ids: list[int]
 
 @router.post("/create", status_code=status.HTTP_201_CREATED, response_model=ScheduleCreateResponse)
-async def create__schedule(schedule_request: ScheduleRequest):
+async def create_schedule(schedule_request: ScheduleRequest):
     try:
         pensumsIds = schedule_request.pensumsIds
         schedule_pensum_ids = []
         schedule = await get_schedule_by_semester(schedule_request.semester)
         if not schedule:
-            schedule = await add_schedule(schedule_request.model_dump())
+            scheduleCreate = {
+                'semester': schedule_request.semester
+            }
+            schedule = await add_schedule(scheduleCreate)
         for pensum_id in pensumsIds:
             data = {
                 'pensumId': pensum_id,

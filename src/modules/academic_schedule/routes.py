@@ -53,23 +53,24 @@ async def create_schedule(schedule_request: ScheduleRequest):
         raise HTTPException(status_code=400, detail=str(e))
     
 @router.delete("/delete/{schedule_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete__schedule_by_id(schedule_id: int):
+async def delete_schedule_by_id(schedule_id: int):
     schedule = await delete_schedule(schedule_id)
     if not schedule:
         raise HTTPException(status_code=404, detail="schedule not found")
     return {"detail": "schedule deleted successfully"}
 
 @router.get("/schedule/{schedule_id}", status_code=status.HTTP_200_OK, response_model=ScheduleResponse)
-async def get__schedule(schedule_id: int):
+async def get_schedule(schedule_id: int):
     schedule = await get_schedule_by_id(schedule_id)
     if not schedule:
         raise HTTPException(status_code=404, detail="schedule not found")
     return schedule
 
 @router.get("/schedule/{schedule_semester}/{pensumId}", status_code=status.HTTP_200_OK)
-async def get__schedule_pensum_by_name_and_pensum_id(schedule_semester: str, pensumId: int):
+async def get_schedule_pensum_by_name_and_pensum_id(schedule_semester: str, pensumId: int):
     schedule = await get_schedule_by_semester(schedule_semester)
     schedule_pensum = await get_schedule_pensum_by_pensum_id_and_schedule_id(pensumId, schedule.id)
     if not schedule_pensum:
         raise HTTPException(status_code=404, detail="schedule not found")
     return schedule_pensum
+

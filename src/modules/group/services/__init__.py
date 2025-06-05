@@ -118,3 +118,13 @@ async def get_all_groups_by_schedule_pensum_id(schedule_pensum_ids: list[int]):
 
 async def exist_base_groups(schedule_pensum_id: int):
     return await database.group.find_first(where ={ 'academicSchedulePensumId': schedule_pensum_id })
+
+async def updata_group_schedule(group_classroom_id: int, schedule: str):
+    return await database.classroom_x_group.update(
+        where={
+            'id': group_classroom_id
+        },
+        data={
+            'mainSchedule': schedule
+        }
+    )

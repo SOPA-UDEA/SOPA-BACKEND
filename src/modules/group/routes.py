@@ -9,14 +9,14 @@ from src.modules.academic_schedule.routes import ScheduleRequest
 from src.modules.schedule_x_group.services import create_schedule_pensum, get_schedule_pensum_by_pensum_id_and_schedule_id
 from src.modules.group_classroom.services import delete_group_classroom
 from src.modules.subject.services import get_subject_by_id, get_subjects_by_pensum_id
-from src.modules.group.services import  add_group_base, create_classroom_x_group, exist_base_groups, get_all_groups_by_schedule_pensum_id, get_groups_by_subjectId_and_academicSchedulePenusmId, soft_delete_group
+from src.modules.group.services import  add_group_base, create_classroom_x_group, exist_base_groups, get_all_groups_by_schedule_pensum_id, get_groups_by_subjectId_and_academicSchedulePenusmId, soft_delete_group, updata_group_schedule
 from src.modules.group.services import add_group, update_group_by_id, delete_group_by_id, get_groups_by_academic_schedule_id, get_group_by_id
 from src.modules.mirror_group.services import create_mirror_group, get_mirror_group_by_name
 import random 
 import string
 from fastapi import HTTPException
 from starlette import status
-from src.modules.group.models import GroupCreationRequest, GroupResponse, GroupUpdateRequest
+from src.modules.group.models import GroupCreationRequest, GroupRequest, GroupResponse, GroupUpdateRequest
 
 
 router = APIRouter(
@@ -133,3 +133,57 @@ async def get_groups_by_academic_schedule(academicScheduleId: int):
         return groups
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
+    
+@router.put("/update/schedule/{group_x_classroom_id}", status_code=status.HTTP_202_ACCEPTED)
+async def update_group_schedule(group_x_classroom_id: int, schedule: str):
+    try:
+        await updata_group_schedule(group_x_classroom_id, schedule)
+        return 'schedule updated successfuly'
+    except Exception as e: 
+        raise HTTPException(status_code=422, detail=str(e))
+    
+
+@router.post("/create-of/{group_id}", status_code=status.HTTP_201_CREATED)
+async def create_group_of(group_id: int):
+    try:
+        group = await get_group_by_id(group_id)
+        subject = await get_subject_by_id(group.subjectId)
+        iniciales = ''.join([p[0] for p in subject.name.split()])
+        name = iniciales + ''.join(random.choices(string.ascii_letters + string.digits, k=5))
+        mirror_group_data = {
+            'name': name
+        }
+        mirror_group = await create_mirror_group(mirror_group_data)
+        groupData = {
+            'groupSize': group.groupSize,
+            'modality': group.modality,
+            'code':  group.code + 1,
+            'mirrorGroupId': mirror_group.id,
+            'subjectId': group.subjectId, 
+            'academicSchedulePensumId': group.academicSchedulePensumId,
+            'maxSize': group.maxSize,
+            'registeredPlaces': group.registeredPlaces,
+        }
+        await add_group(GroupRequest(**groupData))
+        print(1)
+        return 'Group created'
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e))
+        
+
+
+ # groupData = {
+        #     'group': {
+        #         'groupSize': group.groupSize,
+        #         'modality': group.modality,
+        #         'code':  0,
+        #         'mirrorGroupId': mirror_group.id,
+        #         'subjectId': group.subjectId, 
+        #         'academicSchedulePensumId': group.academicSchedulePensumId,
+        #         'maxSize': group.maxSize,
+        #         'registeredPlaces': group.registeredPlaces,
+        #     },
+        #     'mirror': {
+        #         'name': "Grupo espejo A",
+        #     },
+        # }

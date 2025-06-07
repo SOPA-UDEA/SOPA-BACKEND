@@ -4,6 +4,9 @@ import pandas as pd
 async def get_all_pensums():
     return await database.pensum.find_many()
 
+async def get_pensum_by_id(pensumId: int):
+    return await database.pensum.find_first(where={"id": pensumId})
+
 async def get_pensum_by_version_and_program_id(version, programId):
     return await database.pensum.find_first(where={"version": version, "academicProgramId": programId})
 

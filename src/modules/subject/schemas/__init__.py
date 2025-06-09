@@ -16,4 +16,7 @@ class ClassroomResponse(BaseModel):
 class ClassroomXGroupResponse(BaseModel):
     id: int
     mainSchedule: str
+    mainClassroom: ClassroomResponse
+    auxClassroom: ClassroomResponse
+    auxSchedule: str
     # classroom_x_group_classroom_x_group_mainClassroomIdToclassroom: ClassroomResponse

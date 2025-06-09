@@ -1,8 +1,8 @@
 generator client {
   provider                    = "prisma-client-py"
+  enable_experimental_decimal = "true"
   recursive_type_depth        = "5"
   interface                   = "asyncio"
-  enable_experimental_decimal = "true"
 }
 
 datasource db {
@@ -28,7 +28,7 @@ model academic_program {
 
 model academic_schedule {
   id                       Int                        @id @default(autoincrement())
-  semester                 String                     @db.VarChar(150)
+  semester                 String                     @unique @db.VarChar(150)
   academic_schedule_pensum academic_schedule_pensum[]
 }
 
@@ -129,7 +129,7 @@ model prerequirement {
 model professor {
   id                Int                 @id @default(autoincrement())
   name              String              @db.VarChar(150)
-  identification    String?             @db.VarChar(150)
+  identification    String?             @unique @db.VarChar(150)
   group_x_professor group_x_professor[]
 }
 

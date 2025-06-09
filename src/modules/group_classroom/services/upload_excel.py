@@ -1,19 +1,32 @@
 from typing import BinaryIO
+import random
+import string
 import gc
 import pandas as pd
 from fastapi import HTTPException
+from src.modules.mirror_group.services import create_mirror_group
 from src.modules.subject.services import get_subject_by_code
-from src.modules.group.services import get_group_by_code_and_subject_code, add_group
+from src.modules.group.services import (
+    get_group_by_code_and_subject_code_and_academicSchedulePensumId,
+    add_group,
+)
+from src.modules.group_classroom.helpers import (
+    get_or_create_pensum_and_academic_schedule_pensum_id,
+    create_professors_for_group,
+)
 from src.modules.group_classroom.services import (
     get_group_classroom_by_main_classroom_id_and_group_id_and_main_schedule,
     add_group_classroom,
+)
+from src.modules.academic_schedule.models import (
+    ScheduleRequestDrai,
 )
 from src.modules.group.models import GroupRequest
 from src.modules.classroom.services import get_classroom_by_location
 from src.modules.group_classroom.models import GroupClassroomRequest
 
 
-async def upload_excel(file: BinaryIO):
+async def upload_excel(file: BinaryIO, schedule_request: ScheduleRequestDrai):
 
     try:
         # Read the Excel file into a DataFrame
@@ -27,6 +40,14 @@ async def upload_excel(file: BinaryIO):
         raise HTTPException(
             status_code=400, detail=f"Error reading Excel file: {str(e)}"
         )
+
+    # get semester and pensumId from the request
+    semester = schedule_request.semester
+    pensum_id = schedule_request.pensumId
+
+    pensum, academic_schedule_pensum_id = (
+        await get_or_create_pensum_and_academic_schedule_pensum_id(semester, pensum_id)
+    )
 
     # iter ate over the rows of the DataFrame and insert them into the database
     for _, row in df.iterrows():
@@ -55,20 +76,45 @@ async def upload_excel(file: BinaryIO):
         group_code = int(row["GR"])
 
         # Search for the group in the database
-        group = await get_group_by_code_and_subject_code(group_code, subject_code)
+        group = await get_group_by_code_and_subject_code_and_academicSchedulePensumId(
+            group_code, subject_code, academic_schedule_pensum_id.id
+        )
         if not group:
+            iniciales = "".join([p[0] for p in subject.name.split()])
+            mirror_group_name = iniciales + "".join(
+                random.choices(string.ascii_letters + string.digits, k=5)
+            )
+            mirror_group = await create_mirror_group({"name": mirror_group_name})
+
             # If the group does not exist, create it
             new_group = GroupRequest(
                 code=group_code,
                 groupSize=int(row["CUPO"]),
-                modality="PRESENCIAL",
+                modality=pensum.academic_program.modalityAcademic,
                 subjectId=subject.id,
-                academicSchedulePensumId=4,
-                mirrorGroupId=None,
+                academicSchedulePensumId=academic_schedule_pensum_id.id,
+                mirrorGroupId=mirror_group.id,
                 maxSize=int(row["CUPO"]),
                 registeredPlaces=int(row["CUPO"]),
             )
             group = await add_group(new_group)
+        # get the professors an their identifications
+        professors = (
+            str(row["PROFESOR(ES)"]).strip()
+            if pd.notnull(row["PROFESOR(ES)"])
+            else None
+        )
+        identifications = (
+            str(row["IDENTIFICACION"]).strip()
+            if pd.notnull(row["IDENTIFICACION"])
+            else None
+        )
+        if professors and identifications:
+            identifications_list = [i.strip() for i in identifications.split("|")]
+            professors_list = [p.strip() for p in professors.split("|")]
+            await create_professors_for_group(
+                professors_list, identifications_list, group.id
+            )
 
         schedules = str(row["HORARIO"]).strip() if pd.notnull(row["HORARIO"]) else None
         # separate the classrooms by |

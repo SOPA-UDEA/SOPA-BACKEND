@@ -65,7 +65,7 @@ async def check_collision():
                     message = MessageGroupClassroomRequest(
                         groupId=current_gc.groupId,
                         messageTypeId=COLLISION_MESSAGE_TYPE,
-                        detail=f"Conflicto con el grupo {other_gc.group.code} ({other_gc.mainClassroom.location}) - Horario: {other_gc.mainSchedule}",
+                        detail=f"Conflicto con el grupo {other_gc.group.id} ({other_gc.mainClassroom.location}) - Horario: {other_gc.mainSchedule}",
                     )
                     await add_message_group_classroom(message)
             else:

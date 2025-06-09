@@ -1,5 +1,4 @@
-from pydantic import BaseModel, Field
-from typing import Optional
+from pydantic import BaseModel
 
 class ProfessorResponse(BaseModel):
     id: int
@@ -8,3 +7,11 @@ class ProfessorResponse(BaseModel):
 
 class GroupProfessor(BaseModel):
     professor: ProfessorResponse
+
+class GroupProfessorRequest(BaseModel):
+    professorId: int
+    groupId: int
+
+class ProfessorRequest(BaseModel):
+    identification: str
+    name: str

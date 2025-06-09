@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
-from src.modules.academic_schedule.services import get_all_academic_schedules, add_academic_schedule, delete_academic_schedule, get_academic_schedule_by_id, get_academic_schedule_by_semester
-from src.modules.group.services import get_academic_schedule_pensum_by_pensum_id_and_academic_schedule_id
+from src.modules.academic_schedule.models import ScheduleRequest, ScheduleResponse, ScheduleCreateResponse
+from src.modules.academic_schedule.services import add_schedule, delete_schedule, get_schedule_by_id, get_schedule_by_semester
+from src.modules.schedule_x_group.services import get_schedule_pensum_by_pensum_id_and_schedule_id,  create_schedule_pensum
 from starlette import status
 
 
@@ -10,45 +10,62 @@ router = APIRouter(
     tags=["academic_schedule"],
 )
 
-class AcademicScheduleRequest(BaseModel):
-    semester: str = Field(min_length=4, max_length=150)
 
-class AcademicScheduleResponse(BaseModel):
-    id: int
-    semester: str
 
-@router.get("/lists", status_code=status.HTTP_200_OK, response_model=list[AcademicScheduleResponse])
-async def get_academic_schedules():
-    academic_schedules = await get_all_academic_schedules()
-    if not academic_schedules:
-        raise HTTPException(status_code=404, detail="No academic schedules found")
-    return academic_schedules
-
-@router.post("/create", status_code=status.HTTP_201_CREATED, response_model=AcademicScheduleResponse)
-async def create_academic_schedule(academic_schedule_request: AcademicScheduleRequest):
-    academic_schedule = await add_academic_schedule(academic_schedule_request.model_dump())
-    if not academic_schedule:
-        raise HTTPException(status_code=400, detail="Failed to create academic schedule")
-    return academic_schedule  
+@router.post("/create", status_code=status.HTTP_201_CREATED, response_model=ScheduleCreateResponse)
+async def create_schedule(schedule_request: ScheduleRequest):
+    try:
+        pensumsIds = schedule_request.pensumsIds
+        schedule_pensum_ids = []
+        schedule = await get_schedule_by_semester(schedule_request.semester)
+        if not schedule:
+            scheduleCreate = {
+                'semester': schedule_request.semester
+            }
+            schedule = await add_schedule(scheduleCreate)
+        for pensum_id in pensumsIds:
+            data = {
+                'pensumId': pensum_id,
+                'academicScheduleId': schedule.id
+            }
+            schedule_pensum = await get_schedule_pensum_by_pensum_id_and_schedule_id(pensum_id, schedule.id)
+            if not schedule_pensum:
+                schedule_pensum = await create_schedule_pensum(data)
+            schedule_pensum_ids.append(schedule_pensum.id)
+        response = {
+            'id': schedule.id,
+            'semester': schedule.semester,
+            'schedule_pensum_ids': schedule_pensum_ids
+        }
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
     
-@router.delete("/delete/{academic_schedule_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_academic_schedule_by_id(academic_schedule_id: int):
-    academic_schedule = await delete_academic_schedule(academic_schedule_id)
-    if not academic_schedule:
-        raise HTTPException(status_code=404, detail="Academic schedule not found")
-    return {"detail": "Academic schedule deleted successfully"}
+@router.delete("/delete/{schedule_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_schedule_by_id(schedule_id: int):
+    schedule = await delete_schedule(schedule_id)
+    if not schedule:
+        raise HTTPException(status_code=404, detail="schedule not found")
+    return {"detail": "schedule deleted successfully"}
 
-@router.get("/academic_schedule/{academic_schedule_id}", status_code=status.HTTP_200_OK, response_model=AcademicScheduleResponse)
-async def get_academic_schedule(academic_schedule_id: int):
-    academic_schedule = await get_academic_schedule_by_id(academic_schedule_id)
-    if not academic_schedule:
-        raise HTTPException(status_code=404, detail="Academic schedule not found")
-    return academic_schedule
+@router.get("/schedule/{schedule_id}", status_code=status.HTTP_200_OK, response_model=ScheduleResponse)
+async def get_schedule(schedule_id: int):
+    schedule = await get_schedule_by_id(schedule_id)
+    if not schedule:
+        raise HTTPException(status_code=404, detail="schedule not found")
+    return schedule
 
-@router.get("/academic_schedule/{academic_schedule_semester}/{pensumId}", status_code=status.HTTP_200_OK)
-async def get_academic_schedule_pensum_by_name_and_pensum_id(academic_schedule_semester: str, pensumId: int):
-    academic_schedule = await get_academic_schedule_by_semester(academic_schedule_semester)
-    academic_schedule_pensum = await get_academic_schedule_pensum_by_pensum_id_and_academic_schedule_id(pensumId, academic_schedule.id)
-    if not academic_schedule_pensum:
-        raise HTTPException(status_code=404, detail="Academic schedule not found")
-    return academic_schedule_pensum
+@router.get("/schedule/{schedule_semester}/{pensumId}", status_code=status.HTTP_200_OK)
+async def get_schedule_pensum_by_name_and_pensum_id(schedule_semester: str, pensumId: int):
+    schedule = await get_schedule_by_semester(schedule_semester)
+    schedule_pensum = await get_schedule_pensum_by_pensum_id_and_schedule_id(pensumId, schedule.id)
+    if not schedule_pensum:
+        raise HTTPException(status_code=404, detail="schedule not found")
+    return schedule_pensum
+
+@router.get("/semester/{semester}", status_code=status.HTTP_200_OK, response_model=ScheduleResponse)
+async def get_schedule_by_semester_route(semester: str):
+    schedule = await get_schedule_by_semester(semester)
+    if not schedule:
+        raise HTTPException(status_code=404, detail="schedule not found")
+    return schedule

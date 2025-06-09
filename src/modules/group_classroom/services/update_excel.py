@@ -3,23 +3,31 @@ import gc
 import pandas as pd
 from fastapi import HTTPException
 from src.modules.subject.services import get_subject_by_code
-from src.modules.group.services import get_group_by_code_and_subject_code
+from src.modules.group.services import (
+    get_group_by_code_and_subject_code_and_academicSchedulePensumId,
+)
 from src.modules.group_classroom.services import (
     update_group_classroom_aux,
     get_group_classroom_by_group_id,
     update_group_classroom,
-    add_message_group_classroom
+    add_message_group_classroom,
+)
+from src.modules.group_classroom.helpers import (
+    get_pensum_and_academic_schedule_pensum_id,
+)
+from src.modules.academic_schedule.models import (
+    ScheduleRequestDrai,
 )
 from src.modules.classroom.services import get_classroom_by_location
 from src.modules.group_classroom.models import (
     GroupClassroomRequestAux,
     GroupClassroomRequest,
     GroupClassroomResponse,
-    MessageGroupClassroomRequest
+    MessageGroupClassroomRequest,
 )
 
 
-async def update_excel(file: BinaryIO):
+async def update_excel(file: BinaryIO, schedule_request: ScheduleRequestDrai):
 
     CLASSROOM_SET_MESSAGE_TYPE = 3
 
@@ -38,6 +46,11 @@ async def update_excel(file: BinaryIO):
 
     # iter ate over the rows of the DataFrame and insert them into the database
     group_classroom_pointer = {}  # Track progress for each group.id
+    semester = schedule_request.semester
+    pensum_id = schedule_request.pensumId
+    _, academic_schedule_pensum_id = await get_pensum_and_academic_schedule_pensum_id(
+        semester, pensum_id
+    )
     for _, row in df.iterrows():
         classrooms = str(row["AULA"]).strip() if pd.notnull(row["AULA"]) else None
         if not classrooms:
@@ -64,7 +77,9 @@ async def update_excel(file: BinaryIO):
         group_code = int(row["GR"])
 
         # Search for the group in the database
-        group = await get_group_by_code_and_subject_code(group_code, subject_code)
+        group = await get_group_by_code_and_subject_code_and_academicSchedulePensumId(
+            group_code, subject_code, academic_schedule_pensum_id.id
+        )
         if not group:
             del df
             gc.collect()
@@ -131,7 +146,6 @@ async def update_excel(file: BinaryIO):
                     )
                 # check if classroom_x_group exists in the database
                 classroom_x_group: GroupClassroomResponse = group_classrooms[index]
-                print(f"classroom_x_group: {classroom_x_group}")
                 # This means that the classroom is required to be set
                 if classroom_x_group.mainClassroom.isPointer:
                     # update the main classroom for the group classroom
@@ -149,7 +163,7 @@ async def update_excel(file: BinaryIO):
                     message = MessageGroupClassroomRequest(
                         groupId=classroom_x_group.groupId,
                         messageTypeId=CLASSROOM_SET_MESSAGE_TYPE,
-                        detail=f'Aula "{classroom_data.location}" definida para o grupo {group_code}',
+                        detail=f'Aula "{classroom_data.location}" definida para el grupo {group.id}',
                     )
                     await add_message_group_classroom(message)
                     continue

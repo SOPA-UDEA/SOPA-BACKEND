@@ -1,8 +1,7 @@
-from typing import List
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
-from src.modules.academic_schedule.services import get_all_schedules, add_schedule, delete_schedule, get_schedule_by_id, get_schedule_by_semester
-from src.modules.schedule_x_group.services import get_all_schedule_pensum_by_schedule_and_pensum, get_schedule_pensum_by_pensum_id_and_schedule_id,  create_schedule_pensum
+from src.modules.academic_schedule.models import ScheduleRequest, ScheduleResponse, ScheduleCreateResponse
+from src.modules.academic_schedule.services import add_schedule, delete_schedule, get_schedule_by_id, get_schedule_by_semester
+from src.modules.schedule_x_group.services import get_schedule_pensum_by_pensum_id_and_schedule_id,  create_schedule_pensum
 from starlette import status
 
 
@@ -11,17 +10,7 @@ router = APIRouter(
     tags=["academic_schedule"],
 )
 
-class ScheduleRequest(BaseModel):
-    semester: str = Field(min_length=4, max_length=150)
-    pensumsIds: List[int]
 
-class ScheduleResponse(BaseModel):
-    id: int
-    semester: str
-class ScheduleCreateResponse(BaseModel):
-    id: int
-    semester: str
-    schedule_pensum_ids: list[int]
 
 @router.post("/create", status_code=status.HTTP_201_CREATED, response_model=ScheduleCreateResponse)
 async def create_schedule(schedule_request: ScheduleRequest):
@@ -73,4 +62,3 @@ async def get_schedule_pensum_by_name_and_pensum_id(schedule_semester: str, pens
     if not schedule_pensum:
         raise HTTPException(status_code=404, detail="schedule not found")
     return schedule_pensum
-

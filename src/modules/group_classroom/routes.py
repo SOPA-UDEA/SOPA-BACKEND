@@ -1,8 +1,9 @@
 from fastapi import APIRouter
 from fastapi import HTTPException
-from fastapi import UploadFile, File
+from fastapi import UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
+from src.modules.academic_schedule.models import ScheduleRequestDrai
 from src.modules.group_classroom.services.upload_excel import upload_excel
 from src.modules.group_classroom.services.update_excel import update_excel
 from src.modules.group_classroom.services.check_collision import check_collision
@@ -21,10 +22,13 @@ router = APIRouter(
 
 
 @router.post("/upload-excel-drai")
-async def upload_excel_drai(file: UploadFile = File(...)):
+async def upload_excel_drai(
+    semester: str = Form(...), pensumId: int = Form(...), file: UploadFile = File(...)
+):
     try:
         # Call the upload_excel function to process the file
-        await upload_excel(file.file)
+        schedule_request = ScheduleRequestDrai(semester=semester, pensumId=pensumId)
+        await upload_excel(file.file, schedule_request)
         return JSONResponse(
             content={"message": "File processed successfully"}, status_code=200
         )
@@ -39,10 +43,14 @@ async def upload_excel_drai(file: UploadFile = File(...)):
 
 
 @router.post("/update-excel-drai")
-async def update_excel_route(file: UploadFile = File(...)):
+async def update_excel_route(
+    semester: str = Form(...), pensumId: int = Form(...), file: UploadFile = File(...)
+):
     try:
+        # Create a ScheduleRequestDrai object from the form data
+        schedule_request = ScheduleRequestDrai(semester=semester, pensumId=pensumId)
         # Call the update_excel function to process the file
-        await update_excel(file.file)
+        await update_excel(file.file, schedule_request)
         return JSONResponse(
             content={"message": "Excel updated successfully"}, status_code=200
         )

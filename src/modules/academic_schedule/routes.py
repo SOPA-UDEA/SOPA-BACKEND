@@ -62,3 +62,10 @@ async def get_schedule_pensum_by_name_and_pensum_id(schedule_semester: str, pens
     if not schedule_pensum:
         raise HTTPException(status_code=404, detail="schedule not found")
     return schedule_pensum
+
+@router.get("/semester/{semester}", status_code=status.HTTP_200_OK, response_model=ScheduleResponse)
+async def get_schedule_by_semester_route(semester: str):
+    schedule = await get_schedule_by_semester(semester)
+    if not schedule:
+        raise HTTPException(status_code=404, detail="schedule not found")
+    return schedule

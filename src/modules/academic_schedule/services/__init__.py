@@ -21,10 +21,8 @@ async def get_schedule_by_id(academic_schedule_id):
     )
 
 
-async def get_schedule_by_semester(academic_schedule_name):
-    return await database.academic_schedule.find_first(
-        where={"semester": academic_schedule_name}
-    )
+async def get_schedule_by_semester(semester: str):
+    return await database.academic_schedule.find_first(where={"semester": semester})
 
 
 async def get_academic_schedule_pensum_id(

@@ -103,7 +103,12 @@ async def get_all_groups_by_schedule_pensum_id(schedule_pensum_ids: list[int]):
             "academicSchedulePensumId": {"in": schedule_pensum_ids},
         },
         include={
-            "classroom_x_group": True,
+            "classroom_x_group": {
+                "include": {
+                    "mainClassroom": True,
+                    "auxClassroom": True,
+                }
+            },
             "group_x_professor": {"include": {"professor": True}},
             "mirror_group": True,
             "subject": {"include": {"pensum": {"include": {"academic_program": True}}}},

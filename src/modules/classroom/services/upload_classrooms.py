@@ -42,6 +42,9 @@ async def upload_classrooms_from_excel(file: BinaryIO) -> dict:
                     ownDepartment=classroom.startswith(OWN_DEPARTMENT),
                     virtualMode=classroom in ("INGENIA", "UDE@"),
                     enabled=True,
+                    isPointer=False,
+                    hasRoom = True if classroom.startswith(OWN_DEPARTMENT) else False
+
                 )
 
                 # Create the classroom in the database

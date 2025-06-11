@@ -5,7 +5,7 @@ from src.database import database
 from src.modules.group.models import GroupRequest, GroupUpdateRequest
 
 
-async def get_group_by_id(groupId: int):
+async def get_group_by_id(groupId: int) -> GroupResponse:
     return await database.group.find_first(where={"id": groupId})
 
 
@@ -104,7 +104,7 @@ async def soft_delete_group(groupId: int):
     )
 
 
-async def get_all_groups_by_schedule_pensum_id(schedule_pensum_ids: list[int]):
+async def get_all_groups_by_schedule_pensum_id(schedule_pensum_ids: list[int])->List[GroupResponse]:
     return await database.group.find_many(
         where={
             "academicSchedulePensumId": {"in": schedule_pensum_ids},

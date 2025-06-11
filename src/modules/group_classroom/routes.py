@@ -92,10 +92,11 @@ async def find_specific_group_classroom(group_id: int, skip: int = 0, take: int 
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/check-schedule-classroom-modified")
-async def check_group_classroom_modified():
+@router.post("/check-schedule-classroom-modified")
+async def check_group_classroom_modified(semester: str = Form(...), pensumId: int = Form(...)):
     try:
-        await check_schedule_or_classroom_modified()
+        schedule_request = ScheduleRequestDrai(semester=semester, pensumId=pensumId)
+        await check_schedule_or_classroom_modified(schedule_request)
         return JSONResponse(
             content={
                 "message": "Check schedule or classroom modified completed successfully"
@@ -106,10 +107,12 @@ async def check_group_classroom_modified():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/check-capacity")
-async def check_capacity_route():
+@router.post("/check-capacity")
+async def check_capacity_route(semester: str = Form(...), pensumId: int = Form(...)):
+
     try:
-        await check_capacity()
+        schedule_request = ScheduleRequestDrai(semester=semester, pensumId=pensumId)
+        await check_capacity(schedule_request)
         return JSONResponse(
             content={"message": "Capacity check completed successfully"},
             status_code=200,
@@ -118,10 +121,11 @@ async def check_capacity_route():
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 
-@router.get("/check-mirror-group")
-async def check_mirror_group_route():
+@router.post("/check-mirror-group")
+async def check_mirror_group_route(semester: str = Form(...), pensumId: int = Form(...)):
     try:
-        await check_mirror_group()
+        schedule_request = ScheduleRequestDrai(semester=semester, pensumId=pensumId)
+        await check_mirror_group(schedule_request)
         return JSONResponse(
             content={"message": "Mirror group check completed successfully"},
             status_code=200,

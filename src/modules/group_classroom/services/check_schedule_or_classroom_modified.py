@@ -1,5 +1,5 @@
+from fastapi import HTTPException
 from src.modules.group_classroom.services import (
-    get_all_group_classrooms,
     add_message_group_classroom,
     get_message_group_classroom,
     delete_message_group_classroom,
@@ -7,13 +7,35 @@ from src.modules.group_classroom.services import (
 from typing import List, Dict
 from src.modules.group_classroom.models import GroupClassroomResponse
 from src.modules.group_classroom.models import MessageGroupClassroomRequest
+from src.modules.group_classroom.helpers import (
+    get_pensum_and_academic_schedule_pensum_id,
+)
+from src.modules.group.services import (
+    get_all_groups_by_schedule_pensum_id,
+)
+from src.modules.academic_schedule.models import ScheduleRequestDrai
 
 
-async def check_schedule_or_classroom_modified():
+async def check_schedule_or_classroom_modified(schedule_request: ScheduleRequestDrai):
     CLASSROOM_MODIFIED_MESSAGE_TYPE = 2
     SCHEDULE_MODIFIED_MESSAGE_TYPE = 1
 
-    group_classrooms: List[GroupClassroomResponse] = await get_all_group_classrooms()
+    semester = schedule_request.semester
+    pensum_id = schedule_request.pensumId
+    _, academic_schedule_pensum_id = await get_pensum_and_academic_schedule_pensum_id(
+        semester, pensum_id
+    )
+    schedule_pensum_ids = [academic_schedule_pensum_id.id]
+    groups = await get_all_groups_by_schedule_pensum_id(schedule_pensum_ids)
+    if not groups:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No groups found for academic schedule pensum ID {academic_schedule_pensum_id.id}",
+        )
+    group_classrooms: List[GroupClassroomResponse] = []
+    for group in groups:
+        group_classrooms.extend(group.classroom_x_group)
+
     print("Checking for modified schedules...")
     # group by group_id
     group_map: Dict[int, List[GroupClassroomResponse]] = {}
@@ -64,7 +86,9 @@ async def check_schedule_or_classroom_modified():
                 message_type=CLASSROOM_MODIFIED_MESSAGE_TYPE,
             )
             if gc.auxClassroomId not in main_classroom_ids:
-                print(f"El grupo {group_id} tiene un aula modificada: {gc.auxClassroomId}")
+                print(
+                    f"El grupo {group_id} tiene un aula modificada: {gc.auxClassroomId}"
+                )
 
                 if not classroomMessage:
                     # create message

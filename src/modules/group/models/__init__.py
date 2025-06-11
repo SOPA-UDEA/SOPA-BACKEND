@@ -2,7 +2,8 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from src.modules.group_proffesor.models import GroupProfessor
-from src.modules.subject.schemas import ClassroomXGroupResponse, SubjectResponse
+from src.modules.group_classroom.models import GroupClassroomResponse
+from src.modules.subject.schemas import SubjectResponse
 
 class GroupRequest(BaseModel):
     groupSize: int 
@@ -49,5 +50,5 @@ class GroupResponse(BaseModel):
     subject: SubjectResponse
     maxSize: int
     registeredPlaces: int
-    classroom_x_group: List[ClassroomXGroupResponse]
+    classroom_x_group: List[GroupClassroomResponse]
     group_x_professor: List[GroupProfessor]

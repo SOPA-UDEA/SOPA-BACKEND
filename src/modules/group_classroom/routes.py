@@ -1,11 +1,15 @@
 from fastapi import APIRouter
 from fastapi import HTTPException
 from fastapi import UploadFile, File, Form
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.encoders import jsonable_encoder
 from src.modules.academic_schedule.models import ScheduleRequestDrai
+from src.modules.group_classroom.models import CollisionRequest
 from src.modules.group_classroom.services.upload_excel import upload_excel
 from src.modules.group_classroom.services.update_excel import update_excel
+from src.modules.group_classroom.services.export_excel import (
+    export_group_classrooms_to_excel,
+)
 from src.modules.group_classroom.services.check_collision import check_collision
 from src.modules.group_classroom.services import get_specific_group_classroom
 from src.modules.group_classroom.services.check_mirror_group import check_mirror_group
@@ -39,7 +43,9 @@ async def upload_excel_drai(
         )
     except Exception as e:
         # Handle any other exceptions that may occur
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+        return JSONResponse(
+            content={"detail": f"Error processing the file: {str(e)}"}, status_code=500
+        )
 
 
 @router.post("/update-excel-drai")
@@ -61,13 +67,15 @@ async def update_excel_route(
         )
     except Exception as e:
         # Handle any other exceptions that may occur
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+        return JSONResponse(
+            content={"detail": f"Error processing the file: {str(e)}"}, status_code=500
+        )
 
 
-@router.get("/collision")
-async def check_collision_route():
+@router.post("/collision")
+async def check_collision_route(request: CollisionRequest):
     try:
-        await check_collision()
+        await check_collision(request.semester)
         return JSONResponse(
             content={"message": "Collision check completed successfully"},
             status_code=200,
@@ -84,10 +92,11 @@ async def find_specific_group_classroom(group_id: int, skip: int = 0, take: int 
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/check-schedule-classroom-modified")
-async def check_group_classroom_modified():
+@router.post("/check-schedule-classroom-modified")
+async def check_group_classroom_modified(semester: str = Form(...), pensumId: int = Form(...)):
     try:
-        await check_schedule_or_classroom_modified()
+        schedule_request = ScheduleRequestDrai(semester=semester, pensumId=pensumId)
+        await check_schedule_or_classroom_modified(schedule_request)
         return JSONResponse(
             content={
                 "message": "Check schedule or classroom modified completed successfully"
@@ -98,10 +107,12 @@ async def check_group_classroom_modified():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/check-capacity")
-async def check_capacity_route():
+@router.post("/check-capacity")
+async def check_capacity_route(semester: str = Form(...), pensumId: int = Form(...)):
+
     try:
-        await check_capacity()
+        schedule_request = ScheduleRequestDrai(semester=semester, pensumId=pensumId)
+        await check_capacity(schedule_request)
         return JSONResponse(
             content={"message": "Capacity check completed successfully"},
             status_code=200,
@@ -110,10 +121,11 @@ async def check_capacity_route():
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 
-@router.get("/check-mirror-group")
-async def check_mirror_group_route():
+@router.post("/check-mirror-group")
+async def check_mirror_group_route(semester: str = Form(...), pensumId: int = Form(...)):
     try:
-        await check_mirror_group()
+        schedule_request = ScheduleRequestDrai(semester=semester, pensumId=pensumId)
+        await check_mirror_group(schedule_request)
         return JSONResponse(
             content={"message": "Mirror group check completed successfully"},
             status_code=200,
@@ -133,3 +145,16 @@ async def find_by_id(id: int):
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/export-excel", response_class=StreamingResponse)
+async def export_group_classrooms_to_excel_route(scheduleRequest: ScheduleRequestDrai):
+    try:
+        response = await export_group_classrooms_to_excel(scheduleRequest)
+        return response
+    except HTTPException as e:
+        return JSONResponse(
+            content=jsonable_encoder(e.detail), status_code=e.status_code
+        )
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)

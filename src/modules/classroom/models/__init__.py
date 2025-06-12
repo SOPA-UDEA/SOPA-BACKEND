@@ -21,4 +21,4 @@ class ClassroomRequest(BaseModel):
     hasRoom: Optional[bool] = Field(None, description="Indicates if the classroom has a room associated with it")
 
 class EnableStatusRequest(BaseModel):
-    enabled: bool = Field(..., description="Indicates if the classroom should be enabled or disabled")
+    enabled: bool = Field(..., description="Indicates if the classroom should be enabled or disabled") 

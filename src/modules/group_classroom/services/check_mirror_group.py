@@ -1,36 +1,59 @@
+from fastapi import HTTPException
 from typing import Dict, List, Set
 from src.modules.group_classroom.services import (
     add_message_group_classroom,
     get_message_group_classroom,
     delete_message_group_classroom,
-    get_all_group_classrooms,
 )
 from src.modules.mirror_group.services import get_mirror_group_by_id
 from src.modules.group_classroom.models import (
     MessageGroupClassroomRequest,
     GroupClassroomResponse,
 )
+from src.modules.group_classroom.helpers import (
+    get_pensum_and_academic_schedule_pensum_id,
+)
+from src.modules.group.services import (
+    get_all_groups_by_schedule_pensum_id,
+    get_group_by_id,
+)
+from src.modules.academic_schedule.models import ScheduleRequestDrai
 
 
-async def check_mirror_group():
+async def check_mirror_group(schedule_request: ScheduleRequestDrai):
     """
     Check mirror groups for consistency in schedules and classrooms.
     This function retrieves all group classrooms, groups them by their mirror group ID,
     and checks if the schedules and classrooms of each group within a mirror group are consistent.
     If inconsistencies are found, it adds messages to the respective groups.
     """
-    group_classrooms = await get_all_group_classrooms()
-
+    semester = schedule_request.semester
+    pensum_id = schedule_request.pensumId
+    _, academic_schedule_pensum_id = await get_pensum_and_academic_schedule_pensum_id(
+        semester, pensum_id
+    )
+    schedule_pensum_ids = [academic_schedule_pensum_id.id]
+    groups = await get_all_groups_by_schedule_pensum_id(schedule_pensum_ids)
+    if not groups:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No groups found for academic schedule pensum ID {academic_schedule_pensum_id.id}",
+        )
+    # Retrieve all group classrooms
+    group_classrooms: List[GroupClassroomResponse] = []
+    for group in groups:
+        group_classrooms.extend(group.classroom_x_group)
     # Group by mirror group ID
     mirror_group_map: Dict[int, Dict[int, List[GroupClassroomResponse]]] = {}
 
     for gc in group_classrooms:
-        mirror_id = gc.group.mirrorGroupId
+        group = await get_group_by_id(gc.groupId)
+        mirror_id = group.mirrorGroupId
         if not mirror_id:
             continue
         mirror_group_map.setdefault(mirror_id, {}).setdefault(gc.groupId, []).append(gc)
 
-    MIRROR_GROUP_SHEDULE_MESSAGE_TYPE = 5
+    MIRROR_GROUP_SHEDULE_MESSAGE_TYPE = 5 
     MIRROR_GROUP_CLASSROOM_MESSAGE_TYPE = 6
 
     for mirror_id, group_dict in mirror_group_map.items():

@@ -19,4 +19,9 @@ class ScheduleRequestDrai(BaseModel):
 
 class AcademicSchedulePensumIdRequest(BaseModel):
     academicScheduleId: int
+    pensumId: int
+
+class AcademicSchedulePensumIdResponse(BaseModel):
+    id: int
+    academicScheduleId: int
     pensumId: int 

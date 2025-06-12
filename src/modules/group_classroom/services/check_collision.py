@@ -1,7 +1,13 @@
+from fastapi import HTTPException
+from typing import List
 from src.modules.group_classroom.models import MessageGroupClassroomRequest
+from src.modules.group_classroom.models import GroupClassroomResponse
+from src.modules.group.services import get_groups_by_academic_schedule_id
+from src.modules.academic_schedule.services import (
+    get_schedule_by_semester,
+)
 from src.modules.group_classroom.services import (
     get_classrooms_and_schedules,
-    get_all_group_classrooms,
     add_message_group_classroom,
     get_message_group_classroom,
     delete_message_group_classroom,
@@ -12,10 +18,29 @@ from src.modules.group.services import (
 )
 
 
-async def check_collision():
+async def check_collision(semester: str):
     COLLISION_MESSAGE_TYPE = 7
-    group_classrooms = await get_all_group_classrooms()
-    print("Checking for collisions...")
+    academic_schedule = await get_schedule_by_semester(semester)
+    if not academic_schedule:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No academic schedule found for semester {semester}",
+        )
+
+    # get groups by academic schedule
+    groups = await get_groups_by_academic_schedule_id(
+        academic_schedule.id
+    )
+    if not groups:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No groups found for academic schedule {academic_schedule.academicScheduleId}",
+        )
+
+    group_classrooms: List[GroupClassroomResponse] = []
+    for group in groups:
+        group_classrooms.extend(group.classroom_x_group)
+
     for current_gc in group_classrooms:
         main_classroom = current_gc.mainClassroom
         main_schedule = current_gc.mainSchedule
@@ -47,9 +72,13 @@ async def check_collision():
         )
         for other_gc in main_classrooms_and_schedules:
             # Avoid checking mirror groups and the same group
-            if other_gc.groupId == group_id or other_gc.group.mirrorGroupId in mirror_group_ids:
+            if (
+                other_gc.groupId == group_id
+                or other_gc.group.mirrorGroupId in mirror_group_ids
+            ):
                 print(
-                    f"Skipping group {other_gc.groupId} as it is a mirror group or the same group")
+                    f"Skipping group {other_gc.groupId} as it is a mirror group or the same group"
+                )
                 continue
 
             collision = await get_message_group_classroom(

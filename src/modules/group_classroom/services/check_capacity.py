@@ -1,26 +1,54 @@
+from typing import List
+from fastapi import HTTPException
 from src.modules.group_classroom.services import (
     add_message_group_classroom,
     get_message_group_classroom,
     delete_message_group_classroom,
-    get_all_group_classrooms,
 )
+from src.modules.group_classroom.helpers import (
+    get_pensum_and_academic_schedule_pensum_id,
+)
+from src.modules.group.services import (
+    get_all_groups_by_schedule_pensum_id,
+    get_group_by_id,
+)
+from src.modules.academic_schedule.models import ScheduleRequestDrai
 from src.modules.group_classroom.models import MessageGroupClassroomRequest
+from src.modules.group_classroom.models import GroupClassroomResponse
 
 
-async def check_capacity():
+async def check_capacity(schedule_request: ScheduleRequestDrai):
     """
     Check the capacity of all group classrooms and add messages if any exceed the limit.
     This function iterates through all group classrooms, checks if the number of students exceeds the classroom capacity,
     and adds a message if it does. It also deletes any existing messages of type 4 (capacity exceeded).
     """
-    group_classrooms = await get_all_group_classrooms()
     print("Checking capacity for group classrooms...")
+
+    semester = schedule_request.semester
+    pensum_id = schedule_request.pensumId
+
+    _, academic_schedule_pensum_id = await get_pensum_and_academic_schedule_pensum_id(
+        semester, pensum_id
+    )
+    schedule_pensum_ids = [academic_schedule_pensum_id.id]
+
+    groups = await get_all_groups_by_schedule_pensum_id(schedule_pensum_ids)
+    if not groups:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No groups found for academic schedule pensum ID {academic_schedule_pensum_id.id}",
+        )
+    group_classrooms: List[GroupClassroomResponse] = []
+
+    for group in groups:
+        group_classrooms.extend(group.classroom_x_group)
 
     CAPACITY_EXCEEDED_MESSAGE_TYPE = 4  # Assuming 4 is the type for capacity exceeded
 
     for current_gc in group_classrooms:
         main_classroom = current_gc.mainClassroom
-        group = current_gc.group
+        group = await get_group_by_id(current_gc.groupId)
         if main_classroom.isPointer or main_classroom.virtualMode:
             print(
                 f"Skipping group classroom {current_gc.id} due to undefined classroom or virtual mode"

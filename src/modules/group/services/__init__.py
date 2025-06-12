@@ -1,9 +1,11 @@
+from typing import List
+from src.modules.group.models import GroupResponse
 from src.modules.group_proffesor.services import update_group_proffesor
 from src.database import database
 from src.modules.group.models import GroupRequest, GroupUpdateRequest
 
 
-async def get_group_by_id(groupId: int):
+async def get_group_by_id(groupId: int) -> GroupResponse:
     return await database.group.find_first(where={"id": groupId})
 
 
@@ -49,13 +51,18 @@ async def create_classroom_x_group(data):
     return await database.classroom_x_group.create(data=data)
 
 
-async def get_groups_by_academic_schedule_id(academic_schedule_id: int):
+async def get_groups_by_academic_schedule_id(academic_schedule_id: int) ->List[GroupResponse]:
     academic_schedules = await database.academic_schedule_pensum.find_many(
         where={"academicScheduleId": academic_schedule_id},
         include={
             "group": {
                 "include": {
-                    "classroom_x_group": True,
+                    "classroom_x_group": {
+                        "include": {
+                            "mainClassroom": True,
+                            "auxClassroom": True,
+                        }
+                    },
                     "group_x_professor": {"include": {"professor": True}},
                     "mirror_group": True,
                     "subject": {
@@ -97,7 +104,7 @@ async def soft_delete_group(groupId: int):
     )
 
 
-async def get_all_groups_by_schedule_pensum_id(schedule_pensum_ids: list[int]):
+async def get_all_groups_by_schedule_pensum_id(schedule_pensum_ids: list[int])->List[GroupResponse]:
     return await database.group.find_many(
         where={
             "academicSchedulePensumId": {"in": schedule_pensum_ids},

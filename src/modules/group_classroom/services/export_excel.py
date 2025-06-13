@@ -1,5 +1,6 @@
 import pandas as pd
 from collections import defaultdict
+from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 from io import BytesIO
 from src.modules.academic_schedule.models import (
@@ -28,10 +29,18 @@ async def export_group_classrooms_to_excel(
     schedule_pensum_ids = [academic_schedule_pensum_id.id]
 
     groups = await get_all_groups_by_schedule_pensum_id(schedule_pensum_ids)
+    if not groups:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No groups found for semester {scheduleRequest.semester} and pensum ID {scheduleRequest.pensumId}.",
+        )
 
     facs = [group.subject.code[:2] for group in groups]
     deps = [group.subject.code[2:4] for group in groups]
-    ides = ['ISI' if pensum.academic_program.modalityAcademic == 'Presencial' else 'IDS' for _ in groups]
+    ides = [
+        "ISI" if pensum.academic_program.modalityAcademic == "Presencial" else "IDS"
+        for _ in groups
+    ]
     mats = [group.subject.code[4:] for group in groups]
     grs = [group.code for group in groups]
     subjects_names = [group.subject.name for group in groups]
@@ -52,7 +61,9 @@ async def export_group_classrooms_to_excel(
             identifications_aux.append(group_professor.professor.identification)
             professors_aux.append(group_professor.professor.name)
 
-        Indentifications.append("|".join(identifications_aux) if identifications_aux else None)
+        Indentifications.append(
+            "|".join(identifications_aux) if identifications_aux else None
+        )
         professors.append("|".join(professors_aux) if professors_aux else None)
 
         # Extract the classrooms and schedules for each group
@@ -87,10 +98,8 @@ async def export_group_classrooms_to_excel(
     }
     df = pd.DataFrame(data)
     df = df.sort_values(by=["FAC", "DEP", "MAT", "GR"])
-    df = df.astype(str).applymap(lambda x: x.encode('utf-8', 'ignore').decode('utf-8'))
+    df = df.astype(str).applymap(lambda x: x.encode("utf-8", "ignore").decode("utf-8"))
     df.replace("", None, inplace=True)
-
-
 
     output = BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:

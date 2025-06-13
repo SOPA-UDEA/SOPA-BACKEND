@@ -93,7 +93,9 @@ async def find_specific_group_classroom(group_id: int, skip: int = 0, take: int 
 
 
 @router.post("/check-schedule-classroom-modified")
-async def check_group_classroom_modified(semester: str = Form(...), pensumId: int = Form(...)):
+async def check_group_classroom_modified(
+    semester: str = Form(...), pensumId: int = Form(...)
+):
     try:
         schedule_request = ScheduleRequestDrai(semester=semester, pensumId=pensumId)
         await check_schedule_or_classroom_modified(schedule_request)
@@ -122,7 +124,9 @@ async def check_capacity_route(semester: str = Form(...), pensumId: int = Form(.
 
 
 @router.post("/check-mirror-group")
-async def check_mirror_group_route(semester: str = Form(...), pensumId: int = Form(...)):
+async def check_mirror_group_route(
+    semester: str = Form(...), pensumId: int = Form(...)
+):
     try:
         schedule_request = ScheduleRequestDrai(semester=semester, pensumId=pensumId)
         await check_mirror_group(schedule_request)
@@ -153,8 +157,7 @@ async def export_group_classrooms_to_excel_route(scheduleRequest: ScheduleReques
         response = await export_group_classrooms_to_excel(scheduleRequest)
         return response
     except HTTPException as e:
-        return JSONResponse(
-            content=jsonable_encoder(e.detail), status_code=e.status_code
-        )
+        return JSONResponse(content={"error": e.detail}, status_code=e.status_code)
+
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)

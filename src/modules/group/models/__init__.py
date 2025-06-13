@@ -1,5 +1,6 @@
 from typing import List, Optional
 from pydantic import BaseModel, Field
+from pydantic import ConfigDict
 
 from src.modules.group_proffesor.models import GroupProfessor
 from src.modules.group_classroom.models import GroupClassroomResponse
@@ -52,3 +53,4 @@ class GroupResponse(BaseModel):
     registeredPlaces: int
     classroom_x_group: List[GroupClassroomResponse]
     group_x_professor: List[GroupProfessor]
+    model_config = ConfigDict(from_attributes=True)

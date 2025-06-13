@@ -3,11 +3,10 @@ from src.modules.group.models import GroupResponse
 from src.modules.group_proffesor.services import update_group_proffesor
 from src.database import database
 from src.modules.group.models import GroupRequest, GroupUpdateRequest
-
+import math
 
 async def get_group_by_id(groupId: int) -> GroupResponse:
     return await database.group.find_first(where={"id": groupId})
-
 
 async def get_group_by_code_and_subject_code_and_academicSchedulePensumId(
     code: int, subject_code: str, academicSchedulePensumId: int
@@ -20,14 +19,11 @@ async def get_group_by_code_and_subject_code_and_academicSchedulePensumId(
         }
     )
 
-
 async def add_group(data: GroupRequest):
     return await database.group.create(data=data.model_dump())
 
-
 async def add_group_base(data: GroupRequest):
     return await database.group.create(data=data)
-
 
 async def update_group_by_id(groupId: int, data: GroupUpdateRequest):
     await database.group.update(
@@ -42,14 +38,20 @@ async def update_group_by_id(groupId: int, data: GroupUpdateRequest):
 
     await update_group_proffesor(data.professors, groupId)
 
-
 async def delete_group_by_id(groupId: int):
     return await database.group.delete(where={"id": groupId})
 
+async def subtract_group_number_for_greater_groups(groups, base: int):
+    for group in groups:
+        if(base < group.code):
+            await database.group.update(
+                where={"id": group.id},
+                data={"code": group.code - 1}
+            )
+    
 
 async def create_classroom_x_group(data):
     return await database.classroom_x_group.create(data=data)
-
 
 async def get_groups_by_academic_schedule_id(academic_schedule_id: int) ->List[GroupResponse]:
     academic_schedules = await database.academic_schedule_pensum.find_many(
@@ -77,14 +79,11 @@ async def get_groups_by_academic_schedule_id(academic_schedule_id: int) ->List[G
         groups.extend(academic_schedule.group)
     return groups
 
-
 async def get_all_groups_by_mirror_group_id(mirror_group_id: int):
     return await database.group.find_many(where={"mirrorGroupId": mirror_group_id})
 
-
 async def get_group_by_id(groupId: int):
     return await database.group.find_first(where={"id": groupId})
-
 
 async def get_groups_by_subjectId_and_academicSchedulePenusmId(
     subjectId: int, academicSchedulePensumId: int
@@ -96,19 +95,20 @@ async def get_groups_by_subjectId_and_academicSchedulePenusmId(
         }
     )
 
-
 async def soft_delete_group(groupId: int):
     return await database.group.update(
         where={"id": groupId},
         data={"code": 0, "groupSize": 0, "maxSize": 0, "registeredPlaces": 0},
     )
 
-
-async def get_all_groups_by_schedule_pensum_id(schedule_pensum_ids: list[int])->List[GroupResponse]:
-    return await database.group.find_many(
-        where={
-            "academicSchedulePensumId": {"in": schedule_pensum_ids},
-        },
+async def get_all_groups_by_schedule_pensum_id(schedule_pensum_ids: list[int], skip: int = 0, take: int = 15):
+    total = await database.group.count(
+        where={"academicSchedulePensumId": {"in": schedule_pensum_ids}}
+    )
+    items = await database.group.find_many(
+        where={"academicSchedulePensumId": {"in": schedule_pensum_ids}},
+        skip=skip,
+        take=take,
         include={
             "classroom_x_group": {
                 "include": {
@@ -118,18 +118,39 @@ async def get_all_groups_by_schedule_pensum_id(schedule_pensum_ids: list[int])->
             },
             "group_x_professor": {"include": {"professor": True}},
             "mirror_group": True,
-            "subject": {"include": {"pensum": {"include": {"academic_program": True}}}},
+            "subject": {
+                "include": {
+                    "pensum": {
+                        "include": {"academic_program": True}
+                    }
+                }
+            },
         },
+        order=[
+            {"subject": {"level": "asc"}},
+            {"subject": {"name": "asc"}},
+            {'code': 'asc'}
+        ]
     )
-
+    return {
+        "total": total,
+        "skip": skip,
+        "take": take,
+        "data": items,
+    }
 
 async def exist_base_groups(schedule_pensum_id: int):
     return await database.group.find_first(
         where={"academicSchedulePensumId": schedule_pensum_id}
     )
 
+# async def updata_group_schedule(group_classroom_id: int, schedule: str):
+#     return await database.classroom_x_group.update(
+#         where={"id": group_classroom_id}, data={"mainSchedule": schedule}
+#     )
 
-async def updata_group_schedule(group_classroom_id: int, schedule: str):
-    return await database.classroom_x_group.update(
-        where={"id": group_classroom_id}, data={"mainSchedule": schedule}
+async def update_base_group(group):
+    return await database.group.update(
+        where={"id": group.id},
+        data={"code": group.code + 1}
     )

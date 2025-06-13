@@ -1,7 +1,7 @@
 
 
 from typing import List
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from pydantic import BaseModel
 from src.modules.academic_program.services import get_program_by_id
 from src.modules.pensum.services import get_pensum_by_id
@@ -9,7 +9,7 @@ from src.modules.academic_schedule.routes import ScheduleRequest
 from src.modules.schedule_x_group.services import create_schedule_pensum, get_schedule_pensum_by_pensum_id_and_schedule_id
 from src.modules.group_classroom.services import delete_group_classroom
 from src.modules.subject.services import get_subject_by_id, get_subjects_by_pensum_id
-from src.modules.group.services import  add_group_base, create_classroom_x_group, exist_base_groups, get_all_groups_by_schedule_pensum_id, get_groups_by_subjectId_and_academicSchedulePenusmId, soft_delete_group, updata_group_schedule
+from src.modules.group.services import  add_group_base, create_classroom_x_group, exist_base_groups, get_all_groups_by_schedule_pensum_id, get_groups_by_subjectId_and_academicSchedulePenusmId, soft_delete_group, subtract_group_number_for_greater_groups, update_base_group
 from src.modules.group.services import add_group, update_group_by_id, delete_group_by_id, get_groups_by_academic_schedule_id, get_group_by_id
 from src.modules.mirror_group.services import create_mirror_group, get_mirror_group_by_name
 import random 
@@ -27,15 +27,28 @@ class BaseGroup(BaseModel):
     schedule: int
     pensumIds: list[int]
 
-@router.post("/schedule/{schedule_id}/list", response_model=List[GroupResponse])
-async def get_groups_by_penseum(schedule_id: int, pensumIds: list[int]):
+class PaginatedGroupResponse(BaseModel):
+    total: int
+    skip: int
+    take: int
+    data: List[GroupResponse]
+
+
+@router.get("/schedule/{schedule_id}/list", response_model=PaginatedGroupResponse)
+async def get_groups_by_pensum(
+    schedule_id: int,
+    pensumIds: list[int] = Query(...),
+    skip: int = Query(0, ge=0),
+    take: int = Query(15, gt=0, le=100)
+):
     try:
         schedule_pensums_id = []
         for pensumId in pensumIds:
             schedule_pensum = await get_schedule_pensum_by_pensum_id_and_schedule_id(pensumId, schedule_id)
             schedule_pensums_id.append(schedule_pensum.id)
-        groups = await get_all_groups_by_schedule_pensum_id(schedule_pensums_id)
-        return groups
+        
+        result = await get_all_groups_by_schedule_pensum_id(schedule_pensums_id, skip=skip, take=take)
+        return result
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
@@ -69,7 +82,15 @@ async def create_baseGroups(schedule: int, pensumIds: list[int]):
                 groupData['mirror']['name'] = iniciales + ''.join(random.choices(string.ascii_letters + string.digits, k=5))
                 mirrorGroup = await create_mirror_group(groupData['mirror'])
                 groupData['group']['mirrorGroupId'] = mirrorGroup.id
+                # group = await add_group_base(groupData['group'])
+                # classroom_x_group = {
+                #     "mainSchedule": "",
+                #     "mainClassroomId": 1,
+                #     "groupId": group.id,
+                # }
+                # await create_classroom_x_group(classroom_x_group)
                 await add_group_base(groupData['group'])
+
     return "Groups created succsessfuly"
 
 @router.post("/create", status_code=status.HTTP_201_CREATED)
@@ -117,6 +138,7 @@ async def delete_group(groupId: int):
         groups = await get_groups_by_subjectId_and_academicSchedulePenusmId(group.subjectId, group.academicSchedulePensumId)
         if len(groups) > 1:
             await delete_group_classroom(groupId)
+            await subtract_group_number_for_greater_groups(groups, group.code)
             await delete_group_by_id(groupId)
             return "Group deleted successfully"
         await soft_delete_group(groupId)
@@ -134,10 +156,18 @@ async def get_groups_by_academic_schedule(academicScheduleId: int):
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
     
-@router.put("/update/schedule/{group_x_classroom_id}", status_code=status.HTTP_202_ACCEPTED)
-async def update_group_schedule(group_x_classroom_id: int, schedule: str):
+@router.put("/update/schedule/{group_id}", status_code=status.HTTP_202_ACCEPTED)
+async def update_group_schedule(group_id: int, schedules: list[str]):
     try:
-        await updata_group_schedule(group_x_classroom_id, schedule)
+        # await updata_group_schedule(group_id, schedule)
+        await delete_group_classroom(group_id)
+        for schedule in schedules:
+            classroom_x_group = {
+                "mainSchedule": schedule,
+                "mainClassroomId": 1,
+                "groupId": group_id,
+            }
+            await create_classroom_x_group(classroom_x_group)
         return 'schedule updated successfuly'
     except Exception as e: 
         raise HTTPException(status_code=422, detail=str(e))
@@ -147,6 +177,9 @@ async def update_group_schedule(group_x_classroom_id: int, schedule: str):
 async def create_group_of(group_id: int):
     try:
         group = await get_group_by_id(group_id)
+        if group.code == 0:
+            await update_base_group(group)
+            return
         subject = await get_subject_by_id(group.subjectId)
         iniciales = ''.join([p[0] for p in subject.name.split()])
         name = iniciales + ''.join(random.choices(string.ascii_letters + string.digits, k=5))
@@ -165,25 +198,7 @@ async def create_group_of(group_id: int):
             'registeredPlaces': group.registeredPlaces,
         }
         await add_group(GroupRequest(**groupData))
-        print(1)
         return 'Group created'
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
         
-
-
- # groupData = {
-        #     'group': {
-        #         'groupSize': group.groupSize,
-        #         'modality': group.modality,
-        #         'code':  0,
-        #         'mirrorGroupId': mirror_group.id,
-        #         'subjectId': group.subjectId, 
-        #         'academicSchedulePensumId': group.academicSchedulePensumId,
-        #         'maxSize': group.maxSize,
-        #         'registeredPlaces': group.registeredPlaces,
-        #     },
-        #     'mirror': {
-        #         'name': "Grupo espejo A",
-        #     },
-        # }

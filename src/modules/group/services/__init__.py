@@ -154,3 +154,76 @@ async def update_base_group(group):
         where={"id": group.id},
         data={"code": group.code + 1}
     )
+
+async def get_group_to_update(group_id):
+    return await database.group.find_unique(
+        where={'id':group_id},
+        include={
+            "classroom_x_group": {
+                'include': {'mainClassroom': True},
+                'orderBy': {'mainClassroom': {'id': 'asc'}}
+            },
+            "group_x_professor": {
+                "include": {"professor": True},
+                'orderBy': {'professor': {'id': 'asc'}}
+            },
+            "mirror_group": True,
+            "subject": {
+                "include": {
+                    "pensum": {
+                        "include": {"academic_program": True}
+                    }
+                }
+            },
+        },
+    )
+
+async def update_mirror_group(group_ids: list[int]):
+    if len(group_ids) < 2:
+        return "At least two groups are required to validate mirror groups"
+
+    groups = []
+
+    for group_id in group_ids:
+        group = await get_group_to_update(group_id)
+        groups.append(group)
+
+    reference_group = groups[0]
+
+    for group in groups[1:]:
+        # Validar pensum
+        if group.academicSchedulePensumId == reference_group.academicSchedulePensumId:
+            return "groups are not mirrors"
+
+        # Validar cantidad de aulas y profesores
+        if len(group.classroom_x_group) != len(reference_group.classroom_x_group) or \
+           len(group.group_x_professor) != len(reference_group.group_x_professor):
+            return "groups are not mirrors"
+
+        # Validar mainSchedule de aulas
+        for i in range(len(reference_group.classroom_x_group)):
+            if group.classroom_x_group[i].mainSchedule != reference_group.classroom_x_group[i].mainSchedule:
+                return "groups are not mirrors"
+
+        # Validar nombres de profesores
+        for i in range(len(reference_group.group_x_professor)):
+            if group.group_x_professor[i].professor.name != reference_group.group_x_professor[i].professor.name:
+                return "groups are not mirrors"
+
+        # Validar subject
+        if group.subject.name != reference_group.subject.name:
+            return "groups are not mirrors"
+
+        # Validar modalidad
+        if group.modality != reference_group.modality:
+            return "groups are not mirrors"
+
+    # Si todos los grupos pasaron las validaciones
+    # Puedes aplicar la actualización aquí a todos menos al primero
+    for group in groups[1:]:
+        await database.group.update(
+            data={'mirrorGroupId': reference_group.mirrorGroupId},
+            where={'id': group.id}
+        )
+
+    return "groups marked as mirror"

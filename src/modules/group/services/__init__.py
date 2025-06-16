@@ -5,8 +5,10 @@ from src.database import database
 from src.modules.group.models import GroupRequest, GroupUpdateRequest
 import math
 
+
 async def get_group_by_id(groupId: int) -> GroupResponse:
     return await database.group.find_first(where={"id": groupId})
+
 
 async def get_group_by_code_and_subject_code_and_academicSchedulePensumId(
     code: int, subject_code: str, academicSchedulePensumId: int
@@ -19,11 +21,14 @@ async def get_group_by_code_and_subject_code_and_academicSchedulePensumId(
         }
     )
 
+
 async def add_group(data: GroupRequest):
     return await database.group.create(data=data.model_dump())
 
+
 async def add_group_base(data: GroupRequest):
     return await database.group.create(data=data)
+
 
 async def update_group_by_id(groupId: int, data: GroupUpdateRequest):
     await database.group.update(
@@ -38,22 +43,26 @@ async def update_group_by_id(groupId: int, data: GroupUpdateRequest):
 
     await update_group_proffesor(data.professors, groupId)
 
+
 async def delete_group_by_id(groupId: int):
     return await database.group.delete(where={"id": groupId})
 
+
 async def subtract_group_number_for_greater_groups(groups, base: int):
     for group in groups:
-        if(base < group.code):
+        if base < group.code:
             await database.group.update(
-                where={"id": group.id},
-                data={"code": group.code - 1}
+                where={"id": group.id}, data={"code": group.code - 1}
             )
-    
+
 
 async def create_classroom_x_group(data):
     return await database.classroom_x_group.create(data=data)
 
-async def get_groups_by_academic_schedule_id(academic_schedule_id: int) ->List[GroupResponse]:
+
+async def get_groups_by_academic_schedule_id(
+    academic_schedule_id: int,
+) -> List[GroupResponse]:
     academic_schedules = await database.academic_schedule_pensum.find_many(
         where={"academicScheduleId": academic_schedule_id},
         include={
@@ -79,11 +88,14 @@ async def get_groups_by_academic_schedule_id(academic_schedule_id: int) ->List[G
         groups.extend(academic_schedule.group)
     return groups
 
+
 async def get_all_groups_by_mirror_group_id(mirror_group_id: int):
     return await database.group.find_many(where={"mirrorGroupId": mirror_group_id})
 
+
 async def get_group_by_id(groupId: int):
     return await database.group.find_first(where={"id": groupId})
+
 
 async def get_groups_by_subjectId_and_academicSchedulePenusmId(
     subjectId: int, academicSchedulePensumId: int
@@ -95,13 +107,17 @@ async def get_groups_by_subjectId_and_academicSchedulePenusmId(
         }
     )
 
+
 async def soft_delete_group(groupId: int):
     return await database.group.update(
         where={"id": groupId},
         data={"code": 0, "groupSize": 0, "maxSize": 0, "registeredPlaces": 0},
     )
 
-async def get_all_groups_by_schedule_pensum_id(schedule_pensum_ids: list[int], skip: int = 0, take: int = 15):
+
+async def get_all_groups_by_schedule_pensum_id(
+    schedule_pensum_ids: list[int], skip: int = 0, take: int = 15
+) -> List[GroupResponse]:
     total = await database.group.count(
         where={"academicSchedulePensumId": {"in": schedule_pensum_ids}}
     )
@@ -118,19 +134,13 @@ async def get_all_groups_by_schedule_pensum_id(schedule_pensum_ids: list[int], s
             },
             "group_x_professor": {"include": {"professor": True}},
             "mirror_group": True,
-            "subject": {
-                "include": {
-                    "pensum": {
-                        "include": {"academic_program": True}
-                    }
-                }
-            },
+            "subject": {"include": {"pensum": {"include": {"academic_program": True}}}},
         },
         order=[
             {"subject": {"level": "asc"}},
             {"subject": {"name": "asc"}},
-            {'code': 'asc'}
-        ]
+            {"code": "asc"},
+        ],
     )
     return {
         "total": total,
@@ -139,44 +149,42 @@ async def get_all_groups_by_schedule_pensum_id(schedule_pensum_ids: list[int], s
         "data": items,
     }
 
+
 async def exist_base_groups(schedule_pensum_id: int):
     return await database.group.find_first(
         where={"academicSchedulePensumId": schedule_pensum_id}
     )
+
 
 # async def updata_group_schedule(group_classroom_id: int, schedule: str):
 #     return await database.classroom_x_group.update(
 #         where={"id": group_classroom_id}, data={"mainSchedule": schedule}
 #     )
 
+
 async def update_base_group(group):
     return await database.group.update(
-        where={"id": group.id},
-        data={"code": group.code + 1}
+        where={"id": group.id}, data={"code": group.code + 1}
     )
+
 
 async def get_group_to_update(group_id):
     return await database.group.find_unique(
-        where={'id':group_id},
+        where={"id": group_id},
         include={
             "classroom_x_group": {
-                'include': {'mainClassroom': True},
-                'orderBy': {'mainClassroom': {'id': 'asc'}}
+                "include": {"mainClassroom": True},
+                "orderBy": {"mainClassroom": {"id": "asc"}},
             },
             "group_x_professor": {
                 "include": {"professor": True},
-                'orderBy': {'professor': {'id': 'asc'}}
+                "orderBy": {"professor": {"id": "asc"}},
             },
             "mirror_group": True,
-            "subject": {
-                "include": {
-                    "pensum": {
-                        "include": {"academic_program": True}
-                    }
-                }
-            },
+            "subject": {"include": {"pensum": {"include": {"academic_program": True}}}},
         },
     )
+
 
 async def update_mirror_group(group_ids: list[int]):
     if len(group_ids) < 2:
@@ -196,18 +204,25 @@ async def update_mirror_group(group_ids: list[int]):
             return "groups are not mirrors"
 
         # Validar cantidad de aulas y profesores
-        if len(group.classroom_x_group) != len(reference_group.classroom_x_group) or \
-           len(group.group_x_professor) != len(reference_group.group_x_professor):
+        if len(group.classroom_x_group) != len(
+            reference_group.classroom_x_group
+        ) or len(group.group_x_professor) != len(reference_group.group_x_professor):
             return "groups are not mirrors"
 
         # Validar mainSchedule de aulas
         for i in range(len(reference_group.classroom_x_group)):
-            if group.classroom_x_group[i].mainSchedule != reference_group.classroom_x_group[i].mainSchedule:
+            if (
+                group.classroom_x_group[i].mainSchedule
+                != reference_group.classroom_x_group[i].mainSchedule
+            ):
                 return "groups are not mirrors"
 
         # Validar nombres de profesores
         for i in range(len(reference_group.group_x_professor)):
-            if group.group_x_professor[i].professor.name != reference_group.group_x_professor[i].professor.name:
+            if (
+                group.group_x_professor[i].professor.name
+                != reference_group.group_x_professor[i].professor.name
+            ):
                 return "groups are not mirrors"
 
         # Validar subject
@@ -222,8 +237,8 @@ async def update_mirror_group(group_ids: list[int]):
     # Puedes aplicar la actualización aquí a todos menos al primero
     for group in groups[1:]:
         await database.group.update(
-            data={'mirrorGroupId': reference_group.mirrorGroupId},
-            where={'id': group.id}
+            data={"mirrorGroupId": reference_group.mirrorGroupId},
+            where={"id": group.id},
         )
 
     return "groups marked as mirror"

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, TypedDict
 from pydantic import BaseModel, Field
 from pydantic import ConfigDict
 
@@ -54,3 +54,9 @@ class GroupResponse(BaseModel):
     classroom_x_group: List[GroupClassroomResponse]
     group_x_professor: List[GroupProfessor]
     model_config = ConfigDict(from_attributes=True)
+
+class GroupListResponse(TypedDict):
+    total: int
+    skip: int
+    take: int
+    data: List[GroupResponse]

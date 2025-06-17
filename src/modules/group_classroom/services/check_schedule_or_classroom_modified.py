@@ -7,6 +7,7 @@ from src.modules.group_classroom.services import (
 from typing import List, Dict
 from src.modules.group_classroom.models import GroupClassroomResponse
 from src.modules.group_classroom.models import MessageGroupClassroomRequest
+from src.modules.group.models import GroupListResponse
 from src.modules.group_classroom.helpers import (
     get_pensum_and_academic_schedule_pensum_id,
 )
@@ -26,7 +27,8 @@ async def check_schedule_or_classroom_modified(schedule_request: ScheduleRequest
         semester, pensum_id
     )
     schedule_pensum_ids = [academic_schedule_pensum_id.id]
-    groups = await get_all_groups_by_schedule_pensum_id(schedule_pensum_ids)
+    res: GroupListResponse =  await get_all_groups_by_schedule_pensum_id(schedule_pensum_ids)
+    groups = res["data"]
     if not groups:
         raise HTTPException(
             status_code=404,
@@ -34,6 +36,7 @@ async def check_schedule_or_classroom_modified(schedule_request: ScheduleRequest
         )
     group_classrooms: List[GroupClassroomResponse] = []
     for group in groups:
+        print(f"classroom_x_group for group {group.id}")
         group_classrooms.extend(group.classroom_x_group)
 
     print("Checking for modified schedules...")
@@ -95,7 +98,7 @@ async def check_schedule_or_classroom_modified(schedule_request: ScheduleRequest
                     message = MessageGroupClassroomRequest(
                         groupId=group_id,
                         messageTypeId=CLASSROOM_MODIFIED_MESSAGE_TYPE,
-                        detail=f"El grupo {group_id} tiene un aula modificada: {gc.auxClassroomId}",
+                        detail=f"El grupo {group_id} tiene un aula modificada: {gc.auxClassroom.location}",
                     )
                     await add_message_group_classroom(message)
             else:

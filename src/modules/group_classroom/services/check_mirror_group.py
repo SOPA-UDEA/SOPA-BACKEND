@@ -33,7 +33,8 @@ async def check_mirror_group(schedule_request: ScheduleRequestDrai):
         semester, pensum_id
     )
     schedule_pensum_ids = [academic_schedule_pensum_id.id]
-    groups = await get_all_groups_by_schedule_pensum_id(schedule_pensum_ids)
+    res = await get_all_groups_by_schedule_pensum_id(schedule_pensum_ids)
+    groups = res["data"]
     if not groups:
         raise HTTPException(
             status_code=404,
@@ -53,7 +54,7 @@ async def check_mirror_group(schedule_request: ScheduleRequestDrai):
             continue
         mirror_group_map.setdefault(mirror_id, {}).setdefault(gc.groupId, []).append(gc)
 
-    MIRROR_GROUP_SHEDULE_MESSAGE_TYPE = 5 
+    MIRROR_GROUP_SHEDULE_MESSAGE_TYPE = 5
     MIRROR_GROUP_CLASSROOM_MESSAGE_TYPE = 6
 
     for mirror_id, group_dict in mirror_group_map.items():
@@ -72,11 +73,13 @@ async def check_mirror_group(schedule_request: ScheduleRequestDrai):
         }
 
         aux_schedule_sets: Dict[int, Set[str]] = {
-            gid: {gc.auxSchedule for gc in gcs if gc.auxSchedule} for gid, gcs in group_dict.items()
+            gid: {gc.auxSchedule for gc in gcs if gc.auxSchedule}
+            for gid, gcs in group_dict.items()
         }
 
         aux_classroom_sets: Dict[int, Set[int]] = {
-            gid: {gc.auxClassroomId for gc in gcs if gc.auxClassroomId} for gid, gcs in group_dict.items()
+            gid: {gc.auxClassroomId for gc in gcs if gc.auxClassroomId}
+            for gid, gcs in group_dict.items()
         }
 
         # Use the first group as the reference for comparison
@@ -100,7 +103,10 @@ async def check_mirror_group(schedule_request: ScheduleRequestDrai):
                 continue
 
             # Compare sets of schedules
-            if schedules != reference_schedules or aux_schedules != reference_aux_schedules:
+            if (
+                schedules != reference_schedules
+                or aux_schedules != reference_aux_schedules
+            ):
                 print(
                     f"Group {gid} has different schedules than the reference group {reference_gid}"
                 )
@@ -128,7 +134,10 @@ async def check_mirror_group(schedule_request: ScheduleRequestDrai):
                     )
 
             # Comparar sets de aulas
-            if classrooms != reference_classrooms or aux_classrooms != reference_aux_classrooms:
+            if (
+                classrooms != reference_classrooms
+                or aux_classrooms != reference_aux_classrooms
+            ):
                 print(
                     f"Group {gid} has different classrooms than the reference group {reference_gid}"
                 )

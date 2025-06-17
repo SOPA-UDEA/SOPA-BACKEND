@@ -2,7 +2,7 @@ from typing import List
 from src.modules.group.models import GroupResponse
 from src.modules.group_proffesor.services import update_group_proffesor
 from src.database import database
-from src.modules.group.models import GroupRequest, GroupUpdateRequest
+from src.modules.group.models import GroupRequest, GroupUpdateRequest, GroupListResponse
 import math
 
 
@@ -117,7 +117,7 @@ async def soft_delete_group(groupId: int):
 
 async def get_all_groups_by_schedule_pensum_id(
     schedule_pensum_ids: list[int], skip: int = 0, take: int = 15
-) -> List[GroupResponse]:
+) -> GroupListResponse:
     total = await database.group.count(
         where={"academicSchedulePensumId": {"in": schedule_pensum_ids}}
     )

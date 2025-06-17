@@ -97,6 +97,17 @@ async def get_message_group_classroom(
         }
     )
 
+async def get_all_message_group_classroom(
+    group_id: int,
+):
+    return await database.message_classroom_group.find_many(
+        where={
+            "groupId": group_id,
+        },
+        include={
+            "messageType": True,
+        },
+    )
 
 async def delete_message_group_classroom(
     group_id: int,

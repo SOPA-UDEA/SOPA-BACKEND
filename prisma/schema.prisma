@@ -167,7 +167,7 @@ model message_classroom_group {
   detail        String?      @db.VarChar
   groupId       Int
   group         group        @relation(fields: [groupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "groupId")
-  message_type  message_type @relation(fields: [messageTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "messageTypeId")
+  messageType  message_type @relation(fields: [messageTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "messageTypeId")
 }
 
 model message_type {

@@ -1,10 +1,15 @@
 from fastapi import APIRouter
+from typing import List
 from fastapi import HTTPException
 from fastapi import UploadFile, File, Form
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.encoders import jsonable_encoder
 from src.modules.academic_schedule.models import ScheduleRequestDrai
-from src.modules.group_classroom.models import CollisionRequest
+from src.modules.group_classroom.models import (
+    CollisionRequest,
+    GroupNotificationResponse,
+)
+from src.modules.group_classroom.services import get_all_message_group_classroom
 from src.modules.group_classroom.services.upload_excel import upload_excel
 from src.modules.group_classroom.services.update_excel import update_excel
 from src.modules.group_classroom.services.export_excel import (
@@ -161,3 +166,15 @@ async def export_group_classrooms_to_excel_route(scheduleRequest: ScheduleReques
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+@router.get(
+    "/message-group-classroom/{group_id}",
+    response_model=List[GroupNotificationResponse],
+)
+async def find_all_message_group_classroom(group_id: int):
+    try:
+        messages = await get_all_message_group_classroom(group_id)
+        return messages
+    except HTTPException as e:
+        return JSONResponse(content={"error": e.detail}, status_code=e.status_code)

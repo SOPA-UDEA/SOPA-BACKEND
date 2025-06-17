@@ -33,7 +33,8 @@ async def check_capacity(schedule_request: ScheduleRequestDrai):
     )
     schedule_pensum_ids = [academic_schedule_pensum_id.id]
 
-    groups = await get_all_groups_by_schedule_pensum_id(schedule_pensum_ids)
+    res = await get_all_groups_by_schedule_pensum_id(schedule_pensum_ids)
+    groups = res["data"]
     if not groups:
         raise HTTPException(
             status_code=404,
@@ -67,7 +68,7 @@ async def check_capacity(schedule_request: ScheduleRequestDrai):
                 message_data = MessageGroupClassroomRequest(
                     groupId=current_gc.groupId,
                     messageTypeId=CAPACITY_EXCEEDED_MESSAGE_TYPE,
-                    detail=f"El grupo {group.id} supera la capacidad del aula {main_classroom.id} ({group.maxSize}/{main_classroom.capacity} estudiantes)",
+                    detail=f"El grupo {group.id} supera la capacidad del aula {main_classroom.location} ({group.maxSize}/{main_classroom.capacity} estudiantes)",
                 )
                 await add_message_group_classroom(message_data)
                 print(f"Added message for group {group.id} exceeding capacity")

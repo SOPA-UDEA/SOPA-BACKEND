@@ -63,8 +63,6 @@ async def check_schedule_or_classroom_modified(schedule_request: ScheduleRequest
             if (
                 not gc.auxSchedule
                 or not gc.auxClassroomId
-                or not gc.mainClassroom
-                or not gc.mainSchedule
             ):
                 print(f"Skipping group classroom {gc.id} due to missing data")
                 continue

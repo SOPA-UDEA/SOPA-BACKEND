@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from src.modules.group.models import GroupResponse
 from src.modules.group_proffesor.services import update_group_proffesor
 from src.database import database
@@ -116,16 +116,16 @@ async def soft_delete_group(groupId: int):
 
 
 async def get_all_groups_by_schedule_pensum_id(
-    schedule_pensum_ids: list[int], skip: int = 0, take: int = 15
+    schedule_pensum_ids: list[int], skip: int = 0, take: Optional[int] = None
 ) -> GroupListResponse:
     total = await database.group.count(
         where={"academicSchedulePensumId": {"in": schedule_pensum_ids}}
     )
-    items = await database.group.find_many(
-        where={"academicSchedulePensumId": {"in": schedule_pensum_ids}},
-        skip=skip,
-        take=take,
-        include={
+
+    find_args = {
+        "where": {"academicSchedulePensumId": {"in": schedule_pensum_ids}},
+        "skip": skip,
+        "include": {
             "classroom_x_group": {
                 "include": {
                     "mainClassroom": True,
@@ -136,18 +136,25 @@ async def get_all_groups_by_schedule_pensum_id(
             "mirror_group": True,
             "subject": {"include": {"pensum": {"include": {"academic_program": True}}}},
         },
-        order=[
+        "order": [
             {"subject": {"level": "asc"}},
             {"subject": {"name": "asc"}},
             {"code": "asc"},
         ],
-    )
+    }
+
+    if take is not None:
+        find_args["take"] = take
+
+    items = await database.group.find_many(**find_args)
+
     return {
         "total": total,
         "skip": skip,
-        "take": take,
+        "take": take if take is not None else total,
         "data": items,
     }
+
 
 
 async def exist_base_groups(schedule_pensum_id: int):

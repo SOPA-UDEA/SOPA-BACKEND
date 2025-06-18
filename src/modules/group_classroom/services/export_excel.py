@@ -28,7 +28,8 @@ async def export_group_classrooms_to_excel(
     )
     schedule_pensum_ids = [academic_schedule_pensum_id.id]
 
-    groups = await get_all_groups_by_schedule_pensum_id(schedule_pensum_ids)
+    res = await get_all_groups_by_schedule_pensum_id(schedule_pensum_ids)
+    groups = res["data"]
     if not groups:
         raise HTTPException(
             status_code=404,

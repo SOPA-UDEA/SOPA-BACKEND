@@ -242,3 +242,28 @@ async def update_mirror_group(group_ids: list[int]):
         )
 
     return "groups marked as mirror"
+
+# async def get_groups_same_subeject(shedulePensumId, subjectId):
+#     return await database.group.find_many(
+#         where={
+#             'academicSchedulePensumId': shedulePensumId,
+#             'subjectId': subjectId       
+#         },
+#         include={
+#             'classroom_x_group': True
+#         }
+#     )
+
+async def get_groups_same_subeject(schedule_pensum_ids: list[int], subjectName: str):
+    subjects = await database.subject.find_many(where={"name": subjectName})
+    subject_ids = [s.id for s in subjects]
+    return await database.group.find_many(
+        where={
+            "academicSchedulePensumId": {"in": schedule_pensum_ids},
+            "subjectId": {"in": subject_ids}
+        },
+        include={
+            'classroom_x_group': True
+        }
+    )
+ 

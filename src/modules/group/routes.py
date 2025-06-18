@@ -9,7 +9,7 @@ from src.modules.academic_schedule.routes import ScheduleRequest
 from src.modules.schedule_x_group.services import create_schedule_pensum, get_schedule_pensum_by_pensum_id_and_schedule_id
 from src.modules.group_classroom.services import delete_group_classroom
 from src.modules.subject.services import get_subject_by_id, get_subjects_by_pensum_id
-from src.modules.group.services import  add_group_base, create_classroom_x_group, exist_base_groups, get_all_groups_by_schedule_pensum_id, get_groups_by_subjectId_and_academicSchedulePenusmId, soft_delete_group, subtract_group_number_for_greater_groups, update_base_group, update_mirror_group
+from src.modules.group.services import  add_group_base, create_classroom_x_group, exist_base_groups, get_all_groups_by_schedule_pensum_id, get_groups_by_subjectId_and_academicSchedulePenusmId, get_groups_same_subeject, soft_delete_group, subtract_group_number_for_greater_groups, update_base_group, update_mirror_group
 from src.modules.group.services import add_group, update_group_by_id, delete_group_by_id, get_groups_by_academic_schedule_id, get_group_by_id
 from src.modules.mirror_group.services import create_mirror_group, get_mirror_group_by_name
 import random 
@@ -159,7 +159,6 @@ async def get_groups_by_academic_schedule(academicScheduleId: int):
 @router.put("/update/schedule/{group_id}", status_code=status.HTTP_202_ACCEPTED)
 async def update_group_schedule(group_id: int, schedules: list[str]):
     try:
-        # await updata_group_schedule(group_id, schedule)
         await delete_group_classroom(group_id)
         for schedule in schedules:
             classroom_x_group = {
@@ -208,3 +207,17 @@ async def mark_as_mirror(group_ids: list[int]):
         return await update_mirror_group(group_ids)
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
+    
+
+@router.get("/{scheduleId}/subject/")
+
+async def get_groups_same_subject(scheduleId: int, pensumIds: list[int] = Query(...), subjectName: str = Query()):
+    try:
+        schedule_pensum_ids = []
+        for pensumId in pensumIds:
+            schedule_pensum = await get_schedule_pensum_by_pensum_id_and_schedule_id(pensumId, scheduleId)
+            schedule_pensum_ids.append(schedule_pensum.id)
+
+        return await get_groups_same_subeject(schedule_pensum_ids, subjectName)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))

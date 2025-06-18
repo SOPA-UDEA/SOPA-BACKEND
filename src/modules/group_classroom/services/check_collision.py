@@ -75,9 +75,10 @@ async def check_collision(semester: str):
         )
         for other_gc in main_classrooms_and_schedules:
             # Avoid checking mirror groups and the same group
+            another_group = await get_group_by_id(other_gc.groupId)
             if (
                 other_gc.groupId == group_id
-                or other_gc.group.mirrorGroupId in mirror_group_ids
+                or another_group.mirrorGroupId in mirror_group_ids
             ):
                 print(
                     f"Skipping group {other_gc.groupId} as it is a mirror group or the same group"
@@ -97,7 +98,7 @@ async def check_collision(semester: str):
                     message = MessageGroupClassroomRequest(
                         groupId=current_gc.groupId,
                         messageTypeId=COLLISION_MESSAGE_TYPE,
-                        detail=f"Conflicto con el grupo {other_gc.group.id} ({other_gc.mainClassroom.location}) - Horario: {other_gc.mainSchedule}",
+                        detail=f"Conflicto con el grupo {other_gc.groupId} ({other_gc.mainClassroom.location}) - Horario: {other_gc.mainSchedule}",
                     )
                     await add_message_group_classroom(message)
             else:

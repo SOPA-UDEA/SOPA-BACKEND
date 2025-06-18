@@ -27,7 +27,6 @@ from src.modules.group_classroom.models import GroupClassroomRequest
 
 
 async def upload_excel(file: BinaryIO, schedule_request: ScheduleRequestDrai):
-
     try:
         # Read the Excel file into a DataFrame
         df = pd.read_excel(file, engine="openpyxl")
@@ -50,10 +49,6 @@ async def upload_excel(file: BinaryIO, schedule_request: ScheduleRequestDrai):
 
         # iter ate over the rows of the DataFrame and insert them into the database
         for _, row in df.iterrows():
-            classrooms = str(row["AULA"]).strip() if pd.notnull(row["AULA"]) else None
-            if not classrooms:
-                # If there are no classrooms, skip this row
-                continue
             # Get the subject code from the row
             faculty = str(row["FAC"]).zfill(2)
             department = str(row["DEP"]).zfill(2)
@@ -116,10 +111,15 @@ async def upload_excel(file: BinaryIO, schedule_request: ScheduleRequestDrai):
                 await create_professors_for_group(
                     professors_list, identifications_list, group.id
                 )
+            # get the classrooms and schedules
+            classrooms = str(row["AULA"]).strip() if pd.notnull(row["AULA"]) else None
 
             schedules = (
                 str(row["HORARIO"]).strip() if pd.notnull(row["HORARIO"]) else None
             )
+            if not classrooms or not schedules:
+                continue  # skip if there are no classrooms or schedules
+
             # separate the classrooms by |
             classrooms_list = [c.strip() for c in classrooms.split("|")]
             # separate the schedules by |
@@ -166,7 +166,7 @@ async def upload_excel(file: BinaryIO, schedule_request: ScheduleRequestDrai):
                         classroom_x_group = await add_group_classroom(
                             new_classroom_x_group
                         )
-    finally:
-        # clean up memory
-        del df
-        gc.collect()
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error processing Excel file: {str(e)}"
+        )

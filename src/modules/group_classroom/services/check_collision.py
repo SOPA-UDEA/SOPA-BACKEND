@@ -43,10 +43,13 @@ async def check_collision(semester: str):
 
     for current_gc in group_classrooms:
         main_classroom = current_gc.mainClassroom
+        main_schedule = current_gc.mainSchedule
+        if not main_classroom or not main_schedule:
+            print(f"Skipping group classroom {current_gc.id} due to missing data")
+            continue
         if(main_classroom.isPointer):
             print(f"Skipping group classroom {current_gc.id} due to pointer classroom")
             continue
-        main_schedule = current_gc.mainSchedule
         group_id = current_gc.groupId
 
         print(f"validating collision for group main_classroom {current_gc.id}")

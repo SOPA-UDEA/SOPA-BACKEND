@@ -27,7 +27,9 @@ async def check_schedule_or_classroom_modified(schedule_request: ScheduleRequest
         semester, pensum_id
     )
     schedule_pensum_ids = [academic_schedule_pensum_id.id]
-    res: GroupListResponse =  await get_all_groups_by_schedule_pensum_id(schedule_pensum_ids)
+    res: GroupListResponse = await get_all_groups_by_schedule_pensum_id(
+        schedule_pensum_ids
+    )
     groups = res["data"]
     if not groups:
         raise HTTPException(
@@ -48,12 +50,24 @@ async def check_schedule_or_classroom_modified(schedule_request: ScheduleRequest
     # check if the schedules and classrooms are modified
     for group_id, group_classroom_list in group_map.items():
         # get the mainSchedules set of the group_classroom
-        main_schedules = {gc.mainSchedule for gc in group_classroom_list}
-        main_classroom_ids = {gc.mainClassroomId for gc in group_classroom_list}
+        main_schedules = {
+            gc.mainSchedule for gc in group_classroom_list if gc.mainSchedule
+        }
+        main_classroom_ids = {
+            gc.mainClassroomId for gc in group_classroom_list if gc.mainClassroomId
+        }
 
         # check if auxSchedule is in set of mainSchedules
         for gc in group_classroom_list:
             # if the mainClassroomId is a pointer, skip it
+            if (
+                not gc.auxSchedule
+                or not gc.auxClassroomId
+                or not gc.mainClassroom
+                or not gc.mainSchedule
+            ):
+                print(f"Skipping group classroom {gc.id} due to missing data")
+                continue
             if gc.mainClassroom.isPointer:
                 print(f"Skipping classroom {gc.mainClassroomId}")
                 continue

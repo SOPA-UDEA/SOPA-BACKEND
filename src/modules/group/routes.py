@@ -209,15 +209,14 @@ async def mark_as_mirror(group_ids: list[int]):
         raise HTTPException(status_code=422, detail=str(e))
     
 
-@router.get("/{scheduleId}/subject/")
-
-async def get_groups_same_subject(scheduleId: int, pensumIds: list[int] = Query(...), subjectName: str = Query()):
+@router.get("/{scheduleId}/subjects-schedules/")
+async def get_groups_same_subject(scheduleId: int, pensumIds: list[int] = Query(...), groupId: int = Query()):
     try:
         schedule_pensum_ids = []
         for pensumId in pensumIds:
             schedule_pensum = await get_schedule_pensum_by_pensum_id_and_schedule_id(pensumId, scheduleId)
             schedule_pensum_ids.append(schedule_pensum.id)
 
-        return await get_groups_same_subeject(schedule_pensum_ids, subjectName)
+        return await get_groups_same_subeject(schedule_pensum_ids, groupId)
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))

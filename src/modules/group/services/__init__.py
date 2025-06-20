@@ -155,13 +155,6 @@ async def exist_base_groups(schedule_pensum_id: int):
         where={"academicSchedulePensumId": schedule_pensum_id}
     )
 
-
-# async def updata_group_schedule(group_classroom_id: int, schedule: str):
-#     return await database.classroom_x_group.update(
-#         where={"id": group_classroom_id}, data={"mainSchedule": schedule}
-#     )
-
-
 async def update_base_group(group):
     return await database.group.update(
         where={"id": group.id}, data={"code": group.code + 1}
@@ -243,17 +236,6 @@ async def update_mirror_group(group_ids: list[int]):
 
     return "groups marked as mirror"
 
-# async def get_groups_same_subeject(shedulePensumId, subjectId):
-#     return await database.group.find_many(
-#         where={
-#             'academicSchedulePensumId': shedulePensumId,
-#             'subjectId': subjectId       
-#         },
-#         include={
-#             'classroom_x_group': True
-#         }
-#     )
-
 async def get_groups_same_subeject(schedule_pensum_ids: list[int], groupid: int):
     group = await database.group.find_first(
         where={"id": groupid},
@@ -273,3 +255,22 @@ async def get_groups_same_subeject(schedule_pensum_ids: list[int], groupid: int)
         }
     )
  
+async def get_groups_same_level(schedule_pensum_ids: list[int], groupid: int):
+    group = await database.group.find_first(
+        where={"id": groupid},
+        include={
+            'subject': True
+        }
+    )
+    subjects = await database.subject.find_many(where={"level": group.subject.level})
+    subject_ids = [s.id for s in subjects]
+    return await database.group.find_many(
+        where={
+            "academicSchedulePensumId": {"in": schedule_pensum_ids},
+            "subjectId": {"in": subject_ids}
+        },
+        include={
+            'subject': True,
+            'classroom_x_group': True
+        }
+    )

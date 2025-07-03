@@ -9,7 +9,7 @@ from src.modules.academic_schedule.services import get_schedule_by_semester
 from src.modules.schedule_x_group.services import create_schedule_pensum, get_schedule_pensum_by_pensum_id_and_schedule_id
 from src.modules.group_classroom.services import delete_group_classroom
 from src.modules.subject.services import get_subject_by_id, get_subjects_by_pensum_id
-from src.modules.group.services import  add_group_base, create_classroom_x_group, exist_base_groups, get_all_groups_by_schedule_pensum_id, get_groups_by_subjectId_and_academicSchedulePenusmId, get_groups_same_level, get_groups_same_subeject, get_groups_to_export, soft_delete_group, subtract_group_number_for_greater_groups, update_base_group, update_mirror_group
+from src.modules.group.services import  add_group_base, create_classroom_x_group, exist_base_groups, get_all_groups_by_schedule_pensum_id, get_groups_by_subjectId_and_academicSchedulePenusmId, get_groups_same_level, get_groups_same_subeject, get_groups_to_export, soft_delete_group, subtract_group_number_for_greater_groups, update_base_group, update_mirror_group, update_mirror_group_any
 from src.modules.group.services import add_group, update_group_by_id, delete_group_by_id, get_groups_by_academic_schedule_id, get_group_by_id, analyze_schedule_conflict_groups
 from src.modules.mirror_group.services import create_mirror_group, get_mirror_group_by_name
 import random 
@@ -251,3 +251,10 @@ async def getGroupsToExport(semesterId: int, pensumId: int):
         return await get_groups_to_export(schedulePensum.id)
     except Exception as e:
             raise HTTPException(status_code=404, detail=str(e))
+    
+@router.put("/mark-as-mirror-any/", status_code=status.HTTP_200_OK)
+async def mark_as_mirror_any(group_ids: list[int]):
+    try:
+        return await update_mirror_group_any(group_ids)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e))

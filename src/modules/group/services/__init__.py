@@ -377,3 +377,20 @@ async def get_groups_to_export(schedule_pensum_id: int):
         ],
     )
     return groups
+
+async def update_mirror_group_any(group_ids: list[int]):
+    if len(group_ids) < 2:
+        return "At least two groups are required to validate mirror groups"
+
+    group = await database.group.find_first(
+        where={
+            'id': group_ids[0]
+        }
+    )
+    
+    await database.group.update_many(
+        data={"mirrorGroupId": group.mirrorGroupId},
+        where={"id": {"in": group_ids}},
+    )
+
+    return "groups marked as mirror"

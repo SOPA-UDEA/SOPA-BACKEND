@@ -5,12 +5,12 @@ from fastapi import APIRouter, Query
 from pydantic import BaseModel
 from src.modules.academic_program.services import get_program_by_id
 from src.modules.pensum.services import get_pensum_by_id
-from src.modules.academic_schedule.routes import ScheduleRequest
+from src.modules.academic_schedule.services import get_schedule_by_semester
 from src.modules.schedule_x_group.services import create_schedule_pensum, get_schedule_pensum_by_pensum_id_and_schedule_id
 from src.modules.group_classroom.services import delete_group_classroom
 from src.modules.subject.services import get_subject_by_id, get_subjects_by_pensum_id
-from src.modules.group.services import  add_group_base, create_classroom_x_group, exist_base_groups, get_all_groups_by_schedule_pensum_id, get_groups_by_subjectId_and_academicSchedulePenusmId, get_groups_same_level, get_groups_same_subeject, soft_delete_group, subtract_group_number_for_greater_groups, update_base_group, update_mirror_group
-from src.modules.group.services import add_group, update_group_by_id, delete_group_by_id, get_groups_by_academic_schedule_id, get_group_by_id
+from src.modules.group.services import  add_group_base, create_classroom_x_group, exist_base_groups, get_all_groups_by_schedule_pensum_id, get_groups_by_subjectId_and_academicSchedulePenusmId, get_groups_same_level, get_groups_same_subeject, get_groups_to_export, soft_delete_group, subtract_group_number_for_greater_groups, update_base_group, update_mirror_group
+from src.modules.group.services import add_group, update_group_by_id, delete_group_by_id, get_groups_by_academic_schedule_id, get_group_by_id, analyze_schedule_conflict_groups
 from src.modules.mirror_group.services import create_mirror_group, get_mirror_group_by_name
 import random 
 import string
@@ -231,3 +231,23 @@ async def get_groups_same_level_subject(scheduleId: int, pensumIds: list[int] = 
         return await get_groups_same_level(schedule_pensum_ids, groupId)
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
+    
+@router.get("/schedule/{scheduleId}/conflict-detection")
+async def analyze_schedule_conflict(scheduleId: int, pensumIds: list[int] = Query(...)):
+        try:
+            schedule_pensum_ids = []
+            for pensumId in pensumIds:
+                schedule_pensum = await get_schedule_pensum_by_pensum_id_and_schedule_id(pensumId, scheduleId)
+                schedule_pensum_ids.append(schedule_pensum.id)
+            
+            return await analyze_schedule_conflict_groups(schedule_pensum_ids)
+        except Exception as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        
+@router.get("/schedule/{semesterId}/pensum/{pensumId}", response_model=List[GroupResponse])
+async def getGroupsToExport(semesterId: int, pensumId: int):
+    try:
+        schedulePensum =  await get_schedule_pensum_by_pensum_id_and_schedule_id(pensumId, semesterId)
+        return await get_groups_to_export(schedulePensum.id)
+    except Exception as e:
+            raise HTTPException(status_code=404, detail=str(e))

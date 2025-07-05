@@ -1,8 +1,8 @@
 generator client {
   provider                    = "prisma-client-py"
-  enable_experimental_decimal = "true"
   recursive_type_depth        = "5"
   interface                   = "asyncio"
+  enable_experimental_decimal = "true"
 }
 
 datasource db {
@@ -39,8 +39,8 @@ model classroom {
   ownDepartment                   Boolean?            @default(false)
   virtualMode                     Boolean?
   enabled                         Boolean?            @default(true)
-  isPointer                       Boolean?            @default(false)
   hasRoom                         Boolean?            @default(false)
+  isPointer                       Boolean?            @default(false)
   classroom_x_group_auxClassroom  classroom_x_group[] @relation("auxClassroom")
   classroom_x_group_mainClassroom classroom_x_group[] @relation("mainClassroom")
 }
@@ -99,7 +99,7 @@ model group_x_professor {
 
 model mirror_group {
   id    Int     @id @default(autoincrement())
-  name  String? @db.VarChar(150)
+  name  String? @unique @db.VarChar(150)
   group group[]
 }
 
@@ -167,7 +167,7 @@ model message_classroom_group {
   detail        String?      @db.VarChar
   groupId       Int
   group         group        @relation(fields: [groupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "groupId")
-  messageType  message_type @relation(fields: [messageTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "messageTypeId")
+  messageType   message_type @relation(fields: [messageTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "messageTypeId")
 }
 
 model message_type {

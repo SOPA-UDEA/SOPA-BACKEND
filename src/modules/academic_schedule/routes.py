@@ -1,16 +1,17 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from src.modules.academic_schedule.models import ScheduleRequest, ScheduleResponse, ScheduleCreateResponse
-from src.modules.academic_schedule.services import add_schedule, delete_schedule, get_schedule_by_id, get_schedule_by_semester
+from src.modules.academic_schedule.services import add_schedule, delete_schedule, get_schedule_by_id, get_schedule_by_semester, getSchedulesByPensum
 from src.modules.schedule_x_group.services import get_schedule_pensum_by_pensum_id_and_schedule_id,  create_schedule_pensum
 from starlette import status
-
-
+import os
+from datetime import datetime
 
 router = APIRouter( 
     tags=["academic_schedule"],
 )
 
-
+UPLOAD_DIR = "uploaded_files"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("/create", status_code=status.HTTP_201_CREATED, response_model=ScheduleCreateResponse)
 async def create_schedule(schedule_request: ScheduleRequest):
@@ -69,3 +70,27 @@ async def get_schedule_by_semester_route(semester: str):
     if not schedule:
         raise HTTPException(status_code=404, detail="schedule not found")
     return schedule
+
+@router.post("/save/file")
+async def save_file_schedule(file: UploadFile = File(...)):
+    # Validar extensión
+    if not file.filename.endswith((".xls", ".xlsx")):
+        raise HTTPException(status_code=400, detail="El archivo debe ser un Excel (.xls o .xlsx)")
+
+    # Crear nombre único con timestamp
+    filename = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+
+    # Guardar archivo
+    with open(filepath, "wb") as f:
+        content = await file.read()
+        f.write(content)
+
+    return {"message": "Archivo guardado exitosamente", "filename": filename}
+
+@router.get("/all/by-pensum/{pensumId}", response_model=list[ScheduleResponse])
+async def get_schedule_to_export(pensumId: int):
+    try:
+        return await getSchedulesByPensum(pensumId)
+    except Exception as e:
+            raise HTTPException(status_code=404, detail=str(e))

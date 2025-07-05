@@ -42,3 +42,15 @@ async def add_academic_schedule_pensum_id(
     return await database.academic_schedule_pensum.create(
         data=academic_schedule_pensum_id_request.model_dump()
     )
+
+
+async def getSchedulesByPensum(pensumId: int):
+    return await database.academic_schedule.find_many(
+        where={
+            "academic_schedule_pensum": {
+                "some": {
+                    "pensumId": pensumId
+                }
+            }
+        }
+    )

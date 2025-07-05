@@ -4,11 +4,15 @@ from src.modules.group_proffesor.services import update_group_proffesor
 from src.database import database
 from src.modules.group.models import GroupRequest, GroupUpdateRequest, GroupListResponse
 import math
-
+from collections import defaultdict
+from typing import List, Dict, Tuple, Any
 
 async def get_group_by_id(groupId: int) -> GroupResponse:
     return await database.group.find_first(where={"id": groupId})
 
+def extract_schedules(schedule_str: str) -> List[str]:
+    # Puedes hacer esto más robusto según el formato exacto de los horarios
+    return [s.strip() for s in schedule_str.split(",") if s]
 
 async def get_group_by_code_and_subject_code_and_academicSchedulePensumId(
     code: int, subject_code: str, academicSchedulePensumId: int
@@ -162,13 +166,6 @@ async def exist_base_groups(schedule_pensum_id: int):
         where={"academicSchedulePensumId": schedule_pensum_id}
     )
 
-
-# async def updata_group_schedule(group_classroom_id: int, schedule: str):
-#     return await database.classroom_x_group.update(
-#         where={"id": group_classroom_id}, data={"mainSchedule": schedule}
-#     )
-
-
 async def update_base_group(group):
     return await database.group.update(
         where={"id": group.id}, data={"code": group.code + 1}
@@ -247,5 +244,160 @@ async def update_mirror_group(group_ids: list[int]):
             data={"mirrorGroupId": reference_group.mirrorGroupId},
             where={"id": group.id},
         )
+
+    return "groups marked as mirror"
+
+async def get_groups_same_subeject(schedule_pensum_ids: list[int], groupid: int):
+    group = await database.group.find_first(
+        where={"id": groupid},
+        include={
+            'subject': True
+        }
+    )
+    subjects = await database.subject.find_many(where={"name": group.subject.name})
+    subject_ids = [s.id for s in subjects]
+    return await database.group.find_many(
+        where={
+            "academicSchedulePensumId": {"in": schedule_pensum_ids},
+            "subjectId": {"in": subject_ids}
+        },
+        include={
+            'classroom_x_group': True
+        }
+    )
+ 
+async def get_groups_same_level(schedule_pensum_ids: list[int], groupid: int):
+    group = await database.group.find_first(
+        where={"id": groupid},
+        include={
+            'subject': True
+        }
+    )
+    subjects = await database.subject.find_many(where={"level": group.subject.level})
+    subject_ids = [s.id for s in subjects]
+    return await database.group.find_many(
+        where={
+            "academicSchedulePensumId": {"in": schedule_pensum_ids},
+            "subjectId": {"in": subject_ids}
+        },
+        include={
+            'subject': True,
+            'classroom_x_group': True
+        }
+    )
+
+async def analyze_schedule_conflict_groups(schedule_pensum_ids: list[int]):
+    groups = await database.group.find_many(
+        where={
+            "academicSchedulePensumId": {"in": schedule_pensum_ids}
+        },
+        include={
+            "subject": True,  
+            'classroom_x_group': True
+        }
+    )
+
+    from collections import defaultdict
+    from typing import Dict, List, Any
+
+    grouped_by_name: Dict[str, List[Dict]] = defaultdict(list)
+    grouped_by_level: Dict[int, List[Dict]] = defaultdict(list)
+
+    for group in groups:
+        if not group.subject or group.code == 0:
+            continue
+        name = group.subject.name
+        level = group.subject.level
+        schedules = []
+        for cxg in group.classroom_x_group:
+            schedules += extract_schedules(cxg.mainSchedule)
+
+        data = {
+            "id": group.id,
+            "code": group.code,
+            "schedules": schedules,
+            "mirror_group_id": group.mirrorGroupId,
+            "name": name  
+        }
+
+        grouped_by_name[name].append(data)
+        grouped_by_level[level].append(data)
+
+    conflicts = []
+
+    def detect_conflicts(grouped: Dict[str | int, List[Dict[str, Any]]], type_: str):
+        for key, group_list in grouped.items():
+            for i in range(len(group_list)):
+                for j in range(i + 1, len(group_list)):
+                    groupA = group_list[i]
+                    groupB = group_list[j]
+
+                    if groupA["mirror_group_id"] is not None and groupA["mirror_group_id"] == groupB["mirror_group_id"]:
+                        continue
+
+                    set_i = set(groupA["schedules"])
+                    set_j = set(groupB["schedules"])
+                    overlap = set_i.intersection(set_j)
+
+                    if overlap:
+                        conflicts.append({
+                            "type": type_,
+                            "key": key,
+                            "groupA_id": groupA["id"],
+                            "groupA_code": groupA["code"],
+                            "groupA_name": groupA["name"],  
+                            "groupB_id": groupB["id"],
+                            "groupB_code": groupB["code"],
+                            "groupB_name": groupB["name"],  
+                            "conflicting_schedules": sorted(list(overlap))
+                        })
+
+    detect_conflicts(grouped_by_name, type_="name")
+    detect_conflicts(grouped_by_level, type_="level")
+
+    return conflicts
+
+
+async def get_groups_to_export(schedule_pensum_id: int):
+    groups = await database.group.find_many(
+        where={
+            "academicSchedulePensumId": schedule_pensum_id,
+            "code": {
+                "not": 0
+            }
+        },
+        include={
+            "classroom_x_group": {
+                "include": {
+                    "mainClassroom": True,
+                    "auxClassroom": True,
+                }
+            },
+            "group_x_professor": {"include": {"professor": True}},
+            "mirror_group": True,
+            "subject": {"include": {"pensum": {"include": {"academic_program": True}}}},
+        },
+        order=[
+            {"subject": {"level": "asc"}},
+            {"subject": {"name": "asc"}},
+            {"code": "asc"},
+        ],
+    )
+    return groups
+
+async def update_mirror_group_any(group_ids: list[int]):
+    if len(group_ids) < 2:
+        return "At least two groups are required to validate mirror groups"
+
+    group = await database.group.find_first(
+        where={
+            'id': group_ids[0]
+        }
+    )
+    
+    await database.group.update_many(
+        data={"mirrorGroupId": group.mirrorGroupId},
+        where={"id": {"in": group_ids}},
+    )
 
     return "groups marked as mirror"

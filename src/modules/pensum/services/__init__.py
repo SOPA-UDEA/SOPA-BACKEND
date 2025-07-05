@@ -5,9 +5,21 @@ from src.modules.pensum.models import PensumResponse
 async def get_all_pensums():
     return await database.pensum.find_many()
 
+
 async def get_pensum_by_id(pensumId: int) -> PensumResponse:
     return await database.pensum.find_first(where={"id": pensumId},
                                              include={"academic_program": True})
+
+async def get_pensum_by_schedule_pensum(schedulePensumId: int):
+    return await database.pensum.find_first(
+        where={
+            'academic_schedule_pensum': {
+                'some': {
+                    'id': schedulePensumId
+                }
+            }
+        }
+    )
 
 async def get_pensum_by_version_and_program_id(version, programId):
     return await database.pensum.find_first(where={"version": version, "academicProgramId": programId})

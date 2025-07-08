@@ -13,13 +13,15 @@ from slowapi.util import get_remote_address
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "SAM-GOV API"
-    ALLOWED_HOSTS: str 
+    ALLOWED_HOSTS: str
     SECRETS_PATH: str = "../secrets/keys.json"
     # SECRETS_PATH: str = "../secrets/ket_for_test.json"
     SAVE_FOLDER_PATH: str = "../session_save"
     SAM_API_ENDPOINT: str = "https://api.sam.gov/opportunities/v2/search"
     # DATABASE
     DATABASE_URL: str
+    NEON_DATABASE_URL: str = ""  # Optional for seeding from cloud database
+
     class Config:
         env_file = ".env"
 

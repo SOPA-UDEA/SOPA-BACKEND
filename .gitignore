@@ -1,13 +1,10 @@
 # Python specific
 node_modules/
 __pycache__/
-*.md
 *.py[cod]
 *.pyo
-
 *.pyd
 *.env
-
 *.venv
 env/
 venv/
@@ -24,6 +21,11 @@ build/
 *.sqlite3
 instance/
 *.pid
+
+# Docker specific
+.env.prod
+.env.local
+docker-compose.override.yml
 
 # IDE specific
 .vscode/

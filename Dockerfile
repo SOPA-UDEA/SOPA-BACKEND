@@ -1,5 +1,5 @@
 # Multi-stage build for production optimization
-FROM python:3.11-slim as base
+FROM python:3.11-slim AS base
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Development stage
-FROM base as development
+FROM base AS development
 
 # Install development dependencies
 COPY requirements.txt .
@@ -39,14 +39,14 @@ EXPOSE 8000
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
 # Production stage
-FROM base as production
+FROM base AS production
 
 # Create non-root user for security
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 # Install production dependencies only
 COPY requirements.txt .
-RUN pip install --no-dev -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy source code
 COPY --chown=appuser:appuser . .

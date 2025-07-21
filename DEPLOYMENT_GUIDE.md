@@ -153,7 +153,7 @@ sudo ufw allow 6379  # Redis (solo si es externo)
 
 ```bash
 # Construir e iniciar en producción
-docker-compose -f docker-compose.prod.yml up --build -d
+docker-compose -f docker-compose.prod.yml --env-file .env.prod up --build -d
 
 # Verificar que los contenedores estén ejecutándose
 docker ps
@@ -165,12 +165,17 @@ docker ps
 # Entrar al contenedor de producción
 docker exec -it sopa_api_prod bash
 
-# Ejecutar migraciones
+# Método 1: Usando npx prisma (requiere Node.js en container)
 npx prisma migrate deploy
+
+# Método 2: Usando script Python (alternativa si npx no está disponible)
+python scripts/run_migrations.py
 
 # Poblar datos iniciales (solo primera vez)
 python scripts/db_manager.py seed
 ```
+
+**Nota**: Si `npx` no está disponible, usa el script Python `run_migrations.py` que instalará Prisma CLI automáticamente.
 
 ### Paso 5: Configurar Proxy Reverso (Opcional)
 

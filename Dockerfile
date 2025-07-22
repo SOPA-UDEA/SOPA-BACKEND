@@ -43,29 +43,20 @@ CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload
 # Production stage
 FROM base AS production
 
-# Create non-root user for security with proper home directory
-RUN groupadd -r appuser && \
-    useradd -r -g appuser appuser && \
-    mkdir -p /home/appuser/.cache && \
-    chown -R appuser:appuser /home/appuser
-
 # Install production dependencies only
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy source code
-COPY --chown=appuser:appuser . .
+COPY . .
 
 # Copy .env.prod if it exists (for production builds)
-COPY --chown=appuser:appuser .env.prod* ./
+COPY .env.prod* ./
 
 # Make entrypoint script executable
 RUN chmod +x scripts/entrypoint.sh
 
-# Switch to non-root user BEFORE generating Prisma client
-USER appuser
-
-# Now generate Prisma client as appuser (so it uses the correct home directory)
+# Generate Prisma client
 RUN prisma generate
 
 # Set environment variables for Prisma

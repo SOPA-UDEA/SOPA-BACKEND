@@ -37,8 +37,8 @@ ENV/
 env.bak/
 venv.bak/
 
-# Environment files
-.env.prod
+# Environment files (allow .env.prod for production)
+# .env.prod - commented out to allow copying for production builds
 .env.local
 
 # Database

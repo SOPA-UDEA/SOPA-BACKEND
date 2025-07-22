@@ -53,6 +53,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy source code
 COPY --chown=appuser:appuser . .
 
+# Copy .env.prod if it exists (for production builds)
+COPY --chown=appuser:appuser .env.prod* ./
+
 # Make entrypoint script executable
 RUN chmod +x scripts/entrypoint.sh
 

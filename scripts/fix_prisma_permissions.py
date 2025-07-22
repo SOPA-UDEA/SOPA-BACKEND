@@ -1,173 +1,217 @@
 #!/usr/bin/env python3
 """
-Fix Prisma permissions and setup in production container
-This script handles common permission issues with Prisma binaries
+Script para arreglar permisos de Prisma Python en contenedores Docker
 """
-
+import os
+import shutil
 import subprocess
 import sys
-import os
 from pathlib import Path
 
-
-def run_command(command, cwd=None, capture_output=True):
-    """Run a shell command and handle errors"""
+def run_command(cmd, shell=False):
+    """Ejecutar comando y retornar resultado"""
     try:
-        print(f"🔄 Running: {command}")
-        result = subprocess.run(
-            command, 
-            shell=True, 
-            check=True, 
-            capture_output=capture_output, 
-            text=True, 
-            cwd=cwd
-        )
-        if result.stdout and capture_output:
-            print(result.stdout)
-        return True, result.stdout if capture_output else ""
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Error running command: {command}")
-        print(f"Return code: {e.returncode}")
-        if e.stdout:
-            print(f"STDOUT: {e.stdout}")
-        if e.stderr:
-            print(f"STDERR: {e.stderr}")
-        return False, ""
+        result = subprocess.run(cmd, shell=shell, capture_output=True, text=True)
+        return result.returncode == 0, result.stdout, result.stderr
+    except Exception as e:
+        return False, "", str(e)
 
-
-def check_user_permissions():
-    """Check current user and permissions"""
-    print("🔍 Checking current user and permissions...")
+def fix_prisma_permissions():
+    """Arreglar permisos de Prisma Python"""
+    print("🔧 Fixing Prisma Python permissions...")
     
-    success, output = run_command("whoami")
-    if success:
-        user = output.strip()
-        print(f"Current user: {user}")
-        
-        # Check if we're root
-        if user == "root":
-            print("✅ Running as root - should have full permissions")
-            return True
-        else:
-            print(f"⚠️ Running as {user} - may have permission issues")
-            return False
-    
-    return False
-
-
-def fix_prisma_cache_permissions():
-    """Fix Prisma cache directory permissions"""
-    print("🔧 Fixing Prisma cache permissions...")
-    
-    # Get current user
-    success, user = run_command("whoami")
-    if not success:
-        return False
-    
-    user = user.strip()
-    
-    # Common Prisma cache locations
+    # Directorios que necesitan permisos correctos
     cache_dirs = [
-        "/root/.cache/prisma-python",
-        f"/home/{user}/.cache/prisma-python",
-        "/tmp/prisma-cache"
+        "/root/.cache",
+        "/home/appuser/.cache", 
+        "/app/.cache",
+        os.path.expanduser("~/.cache")
     ]
     
     for cache_dir in cache_dirs:
-        if os.path.exists(cache_dir):
-            print(f"📁 Found cache directory: {cache_dir}")
+        try:
+            # Crear directorio si no existe
+            Path(cache_dir).mkdir(parents=True, exist_ok=True)
+            print(f"✅ Created directory: {cache_dir}")
             
-            # Fix ownership
-            run_command(f"chown -R {user}:{user} {cache_dir}", capture_output=False)
-            
-            # Fix permissions
-            run_command(f"chmod -R 755 {cache_dir}", capture_output=False)
-
-
-def install_prisma_properly():
-    """Install Prisma with proper permissions"""
-    print("🔄 Installing Prisma with proper setup...")
+            # Intentar cambiar permisos
+            success, stdout, stderr = run_command(['chmod', '-R', '755', cache_dir])
+            if success:
+                print(f"✅ Fixed permissions for: {cache_dir}")
+            else:
+                print(f"⚠️ Could not fix permissions for {cache_dir}: {stderr}")
+                
+        except Exception as e:
+            print(f"⚠️ Error with directory {cache_dir}: {e}")
     
-    # Set environment variables for Prisma
-    os.environ["PRISMA_QUERY_ENGINE_LIBRARY"] = "/tmp/prisma-query-engine"
-    os.environ["PRISMA_INTROSPECTION_ENGINE_BINARY"] = "/tmp/prisma-introspection-engine"
+    # Limpiar cache existente de Prisma si tiene problemas
+    prisma_cache_dirs = [
+        "/root/.cache/prisma-python",
+        "/home/appuser/.cache/prisma-python",
+        "/app/.cache/prisma-python"
+    ]
     
-    # Install prisma-client-py
-    success, _ = run_command("pip install --upgrade prisma")
-    if not success:
+    for prisma_dir in prisma_cache_dirs:
+        if os.path.exists(prisma_dir):
+            try:
+                print(f"🧹 Cleaning Prisma cache: {prisma_dir}")
+                shutil.rmtree(prisma_dir)
+                print(f"✅ Cleaned: {prisma_dir}")
+            except Exception as e:
+                print(f"⚠️ Could not clean {prisma_dir}: {e}")
+    
+    # Intentar generar cliente Prisma con timeout
+    print("🔄 Regenerating Prisma client...")
+    success, stdout, stderr = run_command(['timeout', '30s', 'npx', 'prisma', 'generate'])
+    if success:
+        print("✅ Prisma client regenerated successfully")
+        print(f"Output: {stdout[:200]}...")
+    else:
+        print(f"⚠️ Failed to regenerate Prisma client: {stderr}")
+        # Intentar sin timeout
+        print("🔄 Trying without timeout...")
+        success2, stdout2, stderr2 = run_command(['npx', 'prisma', 'generate'])
+        if success2:
+            print("✅ Prisma client regenerated successfully (without timeout)")
+        else:
+            print(f"⚠️ Still failed: {stderr2}")
+
+def run_migrations():
+    """Ejecutar migraciones de Prisma con manejo de errores"""
+    print("🔄 Running Prisma migrations...")
+    
+    # Intentar con timeout primero
+    success, stdout, stderr = run_command(['timeout', '60s', 'npx', 'prisma', 'migrate', 'deploy'])
+    if success:
+        print("✅ Migrations completed successfully")
+        print(f"Output: {stdout[-300:]}")  # Mostrar últimas líneas
+        return True
+    else:
+        print(f"⚠️ Migrations failed or timed out: {stderr}")
+        
+        # Intentar sin timeout
+        print("🔄 Trying migrations without timeout...")
+        success2, stdout2, stderr2 = run_command(['npx', 'prisma', 'migrate', 'deploy'])
+        if success2:
+            print("✅ Migrations completed successfully (without timeout)")
+            return True
+        else:
+            print(f"❌ Migrations failed completely: {stderr2}")
+            return False
+
+def check_database_tables():
+    """Verificar que las tablas existan en la base de datos"""
+    print("🔍 Checking database tables...")
+    
+    database_url = os.getenv('DATABASE_URL')
+    if not database_url:
+        print("❌ DATABASE_URL not found")
         return False
     
-    # Try to generate client
-    app_dir = Path("/app")
-    success, _ = run_command("prisma generate", cwd=app_dir)
-    if not success:
-        print("⚠️ First generation failed, trying with elevated permissions...")
+    print(f"📍 Using DATABASE_URL: {database_url.split('@')[1] if '@' in database_url else 'Invalid URL'}")
+    
+    try:
+        import psycopg2
+        conn = psycopg2.connect(database_url, connect_timeout=10)
+        cursor = conn.cursor()
         
-        # Create temp directory for Prisma binaries
-        run_command("mkdir -p /tmp/prisma-cache", capture_output=False)
-        run_command("chmod 777 /tmp/prisma-cache", capture_output=False)
+        cursor.execute("""
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public'
+            ORDER BY table_name
+        """)
         
-        # Set Prisma binary path
-        os.environ["PRISMA_BINARY_TARGET_DIR"] = "/tmp/prisma-cache"
+        tables = cursor.fetchall()
+        if tables:
+            print(f"✅ Found {len(tables)} tables in database:")
+            for table in tables:
+                print(f"   - {table[0]}")
+        else:
+            print("❌ No tables found in database - migrations not run yet")
+            return False
         
-        # Try again
-        success, _ = run_command("prisma generate", cwd=app_dir)
-    
-    return success
+        cursor.close()
+        conn.close()
+        return True
+        
+    except ImportError:
+        print("⚠️ psycopg2 not available, cannot check tables directly")
+        return True
+    except psycopg2.OperationalError as e:
+        if "role" in str(e) and "does not exist" in str(e):
+            print(f"❌ Database user does not exist: {e}")
+            print("💡 Check POSTGRES_USER in .env.prod file")
+        elif "database" in str(e) and "does not exist" in str(e):
+            print(f"❌ Database does not exist: {e}")
+            print("💡 Check POSTGRES_DB in .env.prod file")
+        else:
+            print(f"❌ Database connection failed: {e}")
+            print("💡 Check DATABASE_URL and ensure PostgreSQL is running")
+        return False
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+        return False
 
-
-def run_migrations_safely():
-    """Run migrations with proper error handling"""
-    print("🔄 Running database migrations safely...")
+def check_environment():
+    """Verificar configuración de entorno"""
+    print("🔍 Checking environment configuration...")
     
-    app_dir = Path("/app")
+    required_vars = ['DATABASE_URL', 'POSTGRES_USER', 'POSTGRES_PASSWORD', 'POSTGRES_DB']
+    missing_vars = []
     
-    # First, try to connect to database
-    success, _ = run_command("prisma db push --accept-data-loss --force-reset", cwd=app_dir)
-    if success:
-        print("✅ Database schema updated successfully!")
-    else:
-        print("⚠️ Schema push failed, trying migrate deploy...")
-        success, _ = run_command("prisma migrate deploy", cwd=app_dir)
+    for var in required_vars:
+        value = os.getenv(var)
+        if not value:
+            missing_vars.append(var)
+            print(f"❌ {var} is not set")
+        else:
+            # Ocultar passwords en la salida
+            display_value = "****" if "PASSWORD" in var else value[:50] + "..." if len(value) > 50 else value
+            print(f"✅ {var} = {display_value}")
     
-    return success
-
+    if missing_vars:
+        print(f"\n💡 Missing environment variables: {', '.join(missing_vars)}")
+        print("   Create or update .env.prod file with these variables")
+        return False
+    
+    return True
 
 def main():
-    """Main process to fix Prisma issues"""
-    print("🚀 Starting Prisma permission fix process...")
+    """Función principal que ejecuta todo el proceso"""
+    print("🚀 SOPA Database Setup Script")
+    print("=" * 40)
     
-    # Check if we're in the right directory
-    if not Path("/app/prisma/schema.prisma").exists():
-        print("❌ Prisma schema not found! Make sure you're in the app container.")
-        sys.exit(1)
+    # 0. Verificar variables de entorno
+    if not check_environment():
+        print("\n❌ Environment configuration issues found.")
+        print("   Please check and update your .env.prod file")
+        return
     
-    # Check current user
-    is_root = check_user_permissions()
+    print()
     
-    if not is_root:
-        print("⚠️ Not running as root. Some operations may fail.")
-        print("💡 Try running: docker exec -it --user root sopa_api_prod python scripts/fix_prisma_permissions.py")
+    # 1. Arreglar permisos
+    fix_prisma_permissions()
+    print()
     
-    # Fix cache permissions
-    fix_prisma_cache_permissions()
-    
-    # Install Prisma properly
-    if not install_prisma_properly():
-        print("❌ Failed to install Prisma properly!")
-        sys.exit(1)
-    
-    # Run migrations
-    if not run_migrations_safely():
-        print("❌ Migration process failed!")
-        sys.exit(1)
-    
-    print("🎉 Prisma setup and migrations completed successfully!")
-    print("\n📋 Next steps:")
-    print("1. Exit root session")
-    print("2. Run: python3 scripts/db_manager.py seed")
-    print("3. Test API: curl http://localhost:8000/health")
-
+    # 2. Ejecutar migraciones
+    if run_migrations():
+        print()
+        # 3. Verificar tablas
+        check_database_tables()
+        print()
+        
+        # 4. Sugerir próximos pasos
+        print("🎯 Next steps:")
+        print("   1. Run: python3 scripts/alternative_seed.py")
+        print("   2. Or run: python3 scripts/db_manager.py seed")
+        print("   3. Check API health: curl http://localhost:8000/health")
+    else:
+        print("\n❌ Could not complete migrations. Try manual approach:")
+        print("   1. Check database logs: docker logs sopa_postgres_prod")
+        print("   2. Check .env.prod configuration")
+        print("   3. Restart containers: docker-compose -f docker-compose.prod.yml restart")
+        print("   4. Try direct SQL approach")
 
 if __name__ == "__main__":
     main()

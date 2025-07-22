@@ -152,11 +152,14 @@ sudo ufw allow 6379  # Redis (solo si es externo)
 ### Paso 3: Desplegar
 
 ```bash
-# Construir e iniciar en producción
+# Construir e iniciar en producción (asegurar que .env.prod esté disponible)
 docker-compose -f docker-compose.prod.yml --env-file .env.prod up --build -d
 
 # Verificar que los contenedores estén ejecutándose
 docker ps
+
+# Verificar variables de entorno del API
+docker exec sopa_api_prod env | grep -E "(DATABASE_URL|POSTGRES_)"
 ```
 
 ### Paso 4: Configurar Base de Datos de Producción
@@ -171,58 +174,23 @@ npx prisma migrate deploy
 # Método 2: Usando script Python (alternativa si npx no está disponible)
 python scripts/run_migrations.py
 
-# Método 3: Si hay problemas de permisos, usar como root
-docker exec -it --user root sopa_api_prod bash
-# Luego ejecutar:
-pip install prisma
-prisma generate
-prisma migrate deploy
-
 # Poblar datos iniciales (solo primera vez)
 python3 scripts/db_manager.py seed
-
-# Si hay problemas de permisos con Prisma, usa la versión de producción:
-python3 scripts/db_manager_prod.py seed
-
-# Si persisten problemas de permisos, usa el script alternativo (sin Prisma Python):
-python3 scripts/alternative_seed.py
 ```
 
-**Nota**: Si `npx` no está disponible o hay problemas de permisos, sigue estos pasos:
+**Nota**: Si `npx` no está disponible, usa el script Python `run_migrations.py` que instalará Prisma CLI automáticamente.
 
-#### Solución para problemas de permisos con Prisma:
+#### Solución de Problemas de Permisos
+
+Si encuentras errores de permisos de Prisma Python:
 
 ```bash
-# 1. Entrar como root para resolver permisos
-docker exec -it --user root sopa_api_prod bash
+# Arreglar permisos de Prisma
+docker exec -it --user root sopa_api_prod python scripts/fix_prisma_permissions.py
 
-# 2. Ejecutar script de corrección de permisos
-python scripts/fix_prisma_permissions.py
-
-# 3. Salir y entrar como usuario normal
-exit
-docker exec -it sopa_api_prod bash
-
-# 4. Poblar datos iniciales
-python3 scripts/db_manager.py seed
-```
-
-#### Alternativas si persisten los problemas:
-
-```bash
-# Opción A: Reinstalar Prisma con permisos correctos (como root)
-docker exec -it --user root sopa_api_prod bash
-pip install --force-reinstall prisma
-prisma generate
-prisma migrate deploy
-exit
-
-# Opción B: Usar Python directo para migraciones
-docker exec -it sopa_api_prod python scripts/run_migrations.py
-
-# Opción C: Recrear contenedor con permisos corregidos
-docker-compose -f docker-compose.prod.yml restart api
-```
+# Alternativamente, usar seeding sin Prisma Python
+docker exec -it sopa_api_prod python3 scripts/alternative_seed.py
+```risma CLI automáticamente.
 
 ### Paso 5: Configurar Proxy Reverso (Opcional)
 

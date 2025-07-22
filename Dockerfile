@@ -62,19 +62,13 @@ COPY --chown=appuser:appuser .env.prod* ./
 # Make entrypoint script executable
 RUN chmod +x scripts/entrypoint.sh
 
-# Generate Prisma client and fix permissions
-RUN prisma generate && \
-    mkdir -p /home/appuser/.cache && \
-    if [ -d "/root/.cache/prisma-python" ]; then \
-        cp -r /root/.cache/prisma-python /home/appuser/.cache/ && \
-        chown -R appuser:appuser /home/appuser/.cache/prisma-python; \
-    fi && \
-    chmod -R 755 /home/appuser/.cache 2>/dev/null || true
-
-# Switch to non-root user
+# Switch to non-root user BEFORE generating Prisma client
 USER appuser
 
-# Set the correct cache directory for the non-root user
+# Now generate Prisma client as appuser (so it uses the correct home directory)
+RUN prisma generate
+
+# Set environment variables for Prisma
 ENV PRISMA_CLIENT_DATA_PROXY=false
 ENV PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK=1
 

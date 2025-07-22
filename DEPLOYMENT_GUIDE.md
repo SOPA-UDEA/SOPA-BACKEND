@@ -155,6 +155,12 @@ sudo ufw allow 6379  # Redis (solo si es externo)
 # Construir e iniciar en producción (asegurar que .env.prod esté disponible)
 docker-compose -f docker-compose.prod.yml --env-file .env.prod up --build -d
 
+# Si hay error 'ContainerConfig', limpiar y rebuild:
+docker-compose -f docker-compose.prod.yml down
+docker rmi sopa-backend_api
+docker-compose -f docker-compose.prod.yml --env-file .env.prod build --no-cache
+docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d
+
 # Verificar que los contenedores estén ejecutándose
 docker ps
 
@@ -184,7 +190,7 @@ python3 scripts/db_manager.py seed
 
 Si encuentras errores de permisos de Prisma Python:
 
-```bash
+````bash
 # Arreglar permisos de Prisma
 docker exec -it --user root sopa_api_prod python scripts/fix_prisma_permissions.py
 
@@ -208,7 +214,7 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
-```
+````
 
 ## 🗄️ Gestión de Base de Datos
 

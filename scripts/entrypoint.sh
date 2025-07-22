@@ -8,6 +8,38 @@ set -e
 
 echo "🚀 Starting SOPA API Production Deployment..."
 
+# Function to fix Prisma Python permissions
+fix_prisma_permissions() {
+    echo "🔧 Fixing Prisma Python client permissions..."
+    
+    # Create cache directory with proper permissions
+    if [ -d "/root/.cache" ]; then
+        echo "📁 Setting permissions on /root/.cache directory..."
+        chmod -R 755 /root/.cache 2>/dev/null || true
+        chown -R root:root /root/.cache 2>/dev/null || true
+    fi
+    
+    # Create Prisma cache directory if it doesn't exist
+    mkdir -p /root/.cache/prisma-python
+    chmod -R 755 /root/.cache/prisma-python 2>/dev/null || true
+    
+    # Set proper permissions on the entire home directory
+    chmod 755 /root 2>/dev/null || true
+    
+    echo "✅ Prisma permissions fixed!"
+}
+
+# Function to debug environment and database connection
+debug_environment() {
+    echo "🔍 Environment Debug Information:"
+    echo "DATABASE_URL: ${DATABASE_URL:0:70}..."
+    echo "POSTGRES_DB: ${POSTGRES_DB}"
+    echo "POSTGRES_USER: ${POSTGRES_USER}"
+    echo "Container User: $(whoami)"
+    echo "Container ID: $(hostname)"
+    echo "Python Version: $(python3 --version)"
+}
+
 # Function to wait for database (Local PostgreSQL Container)
 wait_for_db() {
     echo "⏳ Waiting for local PostgreSQL database to be ready..."
@@ -136,6 +168,8 @@ start_application() {
 # Main execution flow - BYPASS MODE  
 main() {
     echo "🔄 BYPASS MODE: Tables created manually, skipping migrations"
+    fix_prisma_permissions
+    debug_environment
     wait_for_db
     verify_schema
     start_application

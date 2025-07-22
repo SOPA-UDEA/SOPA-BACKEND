@@ -12,21 +12,22 @@ echo "🚀 Starting SOPA API Production Deployment..."
 fix_prisma_permissions() {
     echo "🔧 Fixing Prisma Python client permissions..."
     
-    # Create cache directory with proper permissions
-    if [ -d "/root/.cache" ]; then
-        echo "📁 Setting permissions on /root/.cache directory..."
-        chmod -R 755 /root/.cache 2>/dev/null || true
-        chown -R root:root /root/.cache 2>/dev/null || true
+    # Create cache directory with proper permissions for appuser
+    USER_HOME=${HOME:-/home/appuser}
+    if [ -d "$USER_HOME/.cache" ]; then
+        echo "📁 Setting permissions on $USER_HOME/.cache directory..."
+        chmod -R 755 "$USER_HOME/.cache" 2>/dev/null || true
     fi
     
     # Create Prisma cache directory if it doesn't exist
-    mkdir -p /root/.cache/prisma-python
-    chmod -R 755 /root/.cache/prisma-python 2>/dev/null || true
+    mkdir -p "$USER_HOME/.cache/prisma-python" 2>/dev/null || true
+    chmod -R 755 "$USER_HOME/.cache/prisma-python" 2>/dev/null || true
     
-    # Set proper permissions on the entire home directory
-    chmod 755 /root 2>/dev/null || true
+    # Set PRISMA_CLIENT_ENGINE_TYPE to avoid binary path issues
+    export PRISMA_CLIENT_ENGINE_TYPE="library"
+    export PRISMA_CLI_BINARY_TARGETS="native"
     
-    echo "✅ Prisma permissions fixed!"
+    echo "✅ Prisma permissions fixed for user: $(whoami) in $USER_HOME"
 }
 
 # Function to debug environment and database connection

@@ -42,8 +42,8 @@ services:
       target: production
     container_name: sopa_api_prod
     environment:
-      # Connect to local PostgreSQL container
-      DATABASE_URL: postgresql://${POSTGRES_USER:-sopa_user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sopa_db}
+      # Use DATABASE_URL directly from .env.prod file
+      DATABASE_URL: ${DATABASE_URL}
       NEON_DATABASE_URL: ${NEON_DATABASE_URL}
       REDIS_URL: redis://redis:6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}

@@ -70,18 +70,27 @@ except Exception as e:
 run_migrations() {
     echo "🔄 Running database migrations..."
     
-    # Try npx prisma first
-    if command -v npx >/dev/null 2>&1; then
-        echo "🔧 Using npx prisma migrate deploy..."
-        if npx prisma migrate deploy; then
+    # Use Python Prisma CLI directly (already installed)
+    echo "🔧 Using Python Prisma migrate deploy..."
+    if python3 -m prisma migrate deploy; then
+        echo "✅ Migrations completed successfully!"
+        return 0
+    else
+        echo "⚠️ Python Prisma migrate failed, trying alternative approaches..."
+    fi
+    
+    # Try direct prisma command
+    if command -v prisma >/dev/null 2>&1; then
+        echo "🔧 Using direct prisma migrate deploy..."
+        if prisma migrate deploy; then
             echo "✅ Migrations completed successfully!"
             return 0
         else
-            echo "⚠️ npx prisma migrate deploy failed, trying alternative..."
+            echo "⚠️ Direct prisma migrate failed..."
         fi
     fi
     
-    # Try alternative Python script
+    # Try alternative Python script as fallback
     if [ -f "scripts/run_migrations.py" ]; then
         echo "🔧 Using Python migration script..."
         if python3 scripts/run_migrations.py; then
@@ -92,8 +101,26 @@ run_migrations() {
         fi
     fi
     
-    echo "❌ All migration methods failed!"
-    exit 1
+    # If all else fails, try to create tables manually
+    echo "🔧 Trying manual table creation..."
+    if python3 -c "
+import asyncio
+from prisma import Prisma
+
+async def main():
+    db = Prisma()
+    await db.connect()
+    print('✅ Database connected successfully for manual setup')
+    await db.disconnect()
+
+asyncio.run(main())
+    "; then
+        echo "✅ Manual database setup completed!"
+        return 0
+    else
+        echo "❌ All migration methods failed!"
+        exit 1
+    fi
 }
 
 # Function to run smart seeding

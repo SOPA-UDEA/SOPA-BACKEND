@@ -43,8 +43,11 @@ CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload
 # Production stage
 FROM base AS production
 
-# Create non-root user for security
-RUN groupadd -r appuser && useradd -r -g appuser appuser
+# Create non-root user for security with proper home directory
+RUN groupadd -r appuser && \
+    useradd -r -g appuser appuser && \
+    mkdir -p /home/appuser/.cache && \
+    chown -R appuser:appuser /home/appuser
 
 # Install production dependencies only
 COPY requirements.txt .

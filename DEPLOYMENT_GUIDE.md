@@ -183,6 +183,9 @@ python3 scripts/db_manager.py seed
 
 # Si hay problemas de permisos con Prisma, usa la versión de producción:
 python3 scripts/db_manager_prod.py seed
+
+# Si persisten problemas de permisos, usa el script alternativo (sin Prisma Python):
+python3 scripts/alternative_seed.py
 ```
 
 **Nota**: Si `npx` no está disponible o hay problemas de permisos, sigue estos pasos:

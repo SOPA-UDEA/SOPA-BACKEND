@@ -22,13 +22,27 @@ def get_python_command():
 
 def setup_prisma_environment():
     """Setup proper Prisma environment variables"""
-    # Set environment variables to handle permission issues
-    os.environ.setdefault('PRISMA_QUERY_ENGINE_LIBRARY', '/tmp/query-engine')
-    os.environ.setdefault('PRISMA_SCHEMA_ENGINE_BINARY', '/tmp/schema-engine')
+    # Get current user
+    import getpass
+    current_user = getpass.getuser()
     
-    # Create temp directories with proper permissions
-    os.makedirs('/tmp/prisma-cache', exist_ok=True)
-    os.chmod('/tmp/prisma-cache', 0o755)
+    # Set environment variables to handle permission issues
+    user_cache_dir = f'/home/{current_user}/.cache/prisma-python'
+    os.environ.setdefault('PRISMA_QUERY_ENGINE_LIBRARY', f'{user_cache_dir}/query-engine')
+    os.environ.setdefault('PRISMA_SCHEMA_ENGINE_BINARY', f'{user_cache_dir}/schema-engine')
+    os.environ.setdefault('PRISMA_CLIENT_ENGINE_TYPE', 'binary')
+    
+    # Create user-specific cache directories
+    try:
+        os.makedirs(user_cache_dir, exist_ok=True)
+        os.makedirs('/tmp/prisma-user-cache', exist_ok=True)
+    except PermissionError:
+        # If we can't create in standard locations, use temporary directory
+        import tempfile
+        temp_dir = tempfile.mkdtemp(prefix='prisma-cache-')
+        os.environ['PRISMA_QUERY_ENGINE_LIBRARY'] = f'{temp_dir}/query-engine'
+        os.environ['PRISMA_SCHEMA_ENGINE_BINARY'] = f'{temp_dir}/schema-engine'
+        print(f"📁 Using temporary cache directory: {temp_dir}")
 
 
 def run_command(command, description):

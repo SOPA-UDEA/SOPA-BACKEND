@@ -126,7 +126,7 @@ curl http://localhost:8000/health
 # http://localhost:8000/docs (Swagger UI)
 ```
 
-## 🚀 Despliegue en Producción
+## 🚀 Despliegue en Producción (Neon Cloud Database)
 
 ### Paso 1: Preparar Servidor
 
@@ -137,7 +137,26 @@ cd SOPA-BACKEND
 
 # Configurar variables de entorno
 cp .env.prod.example .env.prod
-# Editar .env.prod con configuraciones de producción
+# Editar .env.prod con tu URL de Neon Database
+```
+
+**Configuración .env.prod para Neon:**
+```env
+# Neon Cloud Database - Tu database principal
+DATABASE_URL="postgresql://username:password@your-neon-host:5432/database?sslmode=require"
+
+# Si usas la misma base de datos para sync, usa la misma URL
+NEON_DATABASE_URL="postgresql://username:password@your-neon-host:5432/database?sslmode=require"
+
+# Redis y otras configuraciones
+REDIS_URL="redis://redis:6379"
+REDIS_PASSWORD=your_redis_password_here
+ENVIRONMENT="production"
+PROJECT_NAME="SOPA API - Production"
+DEBUG=false
+LOG_LEVEL="info"
+API_PORT=8000
+ALLOWED_HOSTS="yourdomain.com,www.yourdomain.com"
 ```
 
 ### Paso 2: Configurar Firewall (si aplica)
@@ -145,30 +164,25 @@ cp .env.prod.example .env.prod
 ```bash
 # Abrir puertos necesarios
 sudo ufw allow 8000  # API
-sudo ufw allow 5432  # PostgreSQL (solo si es externo)
 sudo ufw allow 6379  # Redis (solo si es externo)
+# No necesitas puerto 5432 porque usas Neon cloud database
 ```
 
 ### Paso 3: Desplegar
 
 ```bash
-# Construir e iniciar en producción (asegurar que .env.prod esté disponible)
+# Construir e iniciar en producción usando Neon database
 docker-compose -f docker-compose.prod.yml --env-file .env.prod up --build -d
 
-# Si hay error 'ContainerConfig', limpiar y rebuild:
-docker-compose -f docker-compose.prod.yml down
-docker rmi sopa-backend_api
-docker-compose -f docker-compose.prod.yml --env-file .env.prod build --no-cache
-docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d
-
-# Verificar que los contenedores estén ejecutándose
+# Verificar que los contenedores estén ejecutándose (solo API y Redis)
 docker ps
 
 # Verificar variables de entorno del API
+docker exec sopa_api_prod env | grep -E "(DATABASE_URL|NEON_DATABASE_URL)" | head -1
 docker exec sopa_api_prod env | grep -E "(DATABASE_URL|POSTGRES_)"
 ```
 
-### Paso 4: Configurar Base de Datos de Producción
+### Paso 4: Configurar Base de Datos Neon
 
 ```bash
 # Entrar al contenedor de producción
@@ -177,14 +191,22 @@ docker exec -it sopa_api_prod bash
 # Método 1: Usando npx prisma (requiere Node.js en container)
 npx prisma migrate deploy
 
-# Método 2: Usando script Python (alternativa si npx no está disponible)
-python scripts/run_migrations.py
+# Método 2: Usando script Python mejorado para Neon
+python scripts/fix_prisma_permissions.py
 
-# Poblar datos iniciales (solo primera vez)
-python3 scripts/db_manager.py seed
+# Poblar datos iniciales en Neon (solo primera vez)
+python3 scripts/alternative_seed.py
 ```
 
-**Nota**: Si `npx` no está disponible, usa el script Python `run_migrations.py` que instalará Prisma CLI automáticamente.
+**Ventajas de usar Neon Cloud Database:**
+- ✅ No hay contenedor PostgreSQL local que pueda fallar
+- ✅ Base de datos gestionada con backups automáticos
+- ✅ Escalabilidad automática
+- ✅ Menor complejidad en Docker
+- ✅ SSL habilitado por defecto
+- ✅ Monitoreo y métricas incluidas
+
+**Nota**: Al usar Neon, ya no necesitas gestionar un contenedor PostgreSQL. Tu base de datos está en la nube y es más robusta.
 
 #### Solución de Problemas de Permisos
 

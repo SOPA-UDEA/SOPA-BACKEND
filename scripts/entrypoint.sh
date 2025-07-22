@@ -8,47 +8,67 @@ set -e
 
 echo "🚀 Starting SOPA API Production Deployment..."
 
-# Function to wait for database
+# Function to wait for database (Neon Cloud Database)
 wait_for_db() {
-    echo "⏳ Waiting for database to be ready..."
-    echo "📍 Using DATABASE_URL: ${DATABASE_URL}"
+    echo "⏳ Waiting for Neon cloud database to be ready..."
+    echo "📍 Using DATABASE_URL: ${DATABASE_URL:0:50}..."
+    echo "🖥️  Running on: $(uname -a)"
     
-    max_attempts=30
+    max_attempts=30  # Reduced since we're connecting to a cloud database
     attempt=0
     
+    echo "🔍 Testing Neon database connection..."
+    
     while [ $attempt -lt $max_attempts ]; do
-        # Try simple connection test first
+        # Test connection to Neon database
         if python3 -c "
 import os
 import psycopg2
+import sys
 try:
-    conn = psycopg2.connect(os.getenv('DATABASE_URL'), connect_timeout=5)
+    db_url = os.getenv('DATABASE_URL')
+    if not db_url:
+        print('❌ DATABASE_URL is not set')
+        sys.exit(1)
+    
+    print('🔍 Connecting to Neon database...')
+    conn = psycopg2.connect(
+        db_url, 
+        connect_timeout=15,
+        application_name='sopa_api_startup',
+        sslmode='require'  # Neon requires SSL
+    )
+    cursor = conn.cursor()
+    cursor.execute('SELECT version();')
+    version = cursor.fetchone()[0]
+    print('✅ Connected to Neon PostgreSQL:', version[:60] + '...')
+    cursor.close()
     conn.close()
-    print('✅ Database connection successful!')
-    exit(0)
+    sys.exit(0)
 except Exception as e:
-    print(f'❌ Connection failed: {e}')
-    exit(1)
-        " 2>/dev/null; then
-            echo "✅ Database connection successful!"
+    print('❌ Neon connection failed:', str(e))
+    sys.exit(1)
+        " 2>&1; then
+            echo "✅ Neon database connection successful!"
             return 0
         fi
         
         attempt=$((attempt + 1))
-        echo "❌ Database not ready. Attempt $attempt/$max_attempts. Retrying in 2 seconds..."
-        sleep 2
+        echo "❌ Neon database not ready. Attempt $attempt/$max_attempts. Retrying in 5 seconds..."
+        sleep 5
     done
     
-    echo "❌ Failed to connect to database after $max_attempts attempts"
-    echo "🔍 Debug info:"
-    echo "DATABASE_URL: ${DATABASE_URL}"
-    echo "POSTGRES_USER: ${POSTGRES_USER}"
-    echo "POSTGRES_DB: ${POSTGRES_DB}"
+    echo "❌ Failed to connect to Neon database after $max_attempts attempts"
+    echo "🔍 Final debug info:"
+    echo "DATABASE_URL: ${DATABASE_URL:0:50}..."
+    echo "Container hostname: $(hostname)"
+    echo "Container IP: $(hostname -I 2>/dev/null || echo 'Unknown')"
     
-    # Try to ping the database host
-    echo "🌐 Testing network connectivity to postgres..."
-    if command -v nc >/dev/null 2>&1; then
-        nc -zv postgres 5432 || echo "❌ Cannot reach postgres:5432"
+    # Network debugging for external connectivity
+    echo "🌐 Network debugging:"
+    if command -v curl >/dev/null 2>&1; then
+        echo "Testing external connectivity:"
+        curl -I --connect-timeout 10 https://google.com || echo "External connectivity test failed"
     fi
     
     exit 1

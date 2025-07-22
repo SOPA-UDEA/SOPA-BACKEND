@@ -1,37 +1,7 @@
 version: "3.8"
 
 services:
-  # PostgreSQL Database - Production
-  postgres:
-    image: postgres:15-alpine
-    container_name: sopa_postgres_prod
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-sopa_prod}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data_prod:/var/lib/postgresql/data
-      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-sopa_prod}",
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - sopa_network
-    restart: always
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-        reservations:
-          memory: 512M
-
-  # FastAPI Application - Production
+  # FastAPI Application - Production (Using Neon Cloud Database)
   api:
     build:
       context: .
@@ -39,14 +9,21 @@ services:
       target: production
     container_name: sopa_api_prod
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sopa_prod}
+      # Use Neon database directly - no local PostgreSQL container
+      DATABASE_URL: ${DATABASE_URL}
+      NEON_DATABASE_URL: ${NEON_DATABASE_URL}
+      REDIS_URL: redis://redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS}
       PROJECT_NAME: "SOPA API - Production"
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      DEBUG: ${DEBUG:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "${API_PORT:-8000}:8000"
     depends_on:
-      postgres:
-        condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - sopa_network
     restart: always
@@ -93,7 +70,6 @@ services:
     restart: always
 
 volumes:
-  postgres_data_prod:
   redis_data_prod:
 
 networks:

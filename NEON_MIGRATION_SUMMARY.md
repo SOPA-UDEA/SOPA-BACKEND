@@ -7,17 +7,20 @@ The SOPA Backend has been configured to use **Neon Cloud Database** directly ins
 ## What Changed
 
 ### 1. Docker Compose Configuration (`docker-compose.prod.yml`)
+
 - ✅ **REMOVED**: Local PostgreSQL container service
 - ✅ **REMOVED**: PostgreSQL volume (`postgres_data_prod`)
 - ✅ **UPDATED**: API service to connect directly to Neon
 - ✅ **SIMPLIFIED**: Dependencies (only Redis dependency now)
 
 ### 2. Environment Configuration (`.env.prod.example`)
+
 - ✅ **UPDATED**: `DATABASE_URL` points to Neon with SSL requirement
 - ✅ **SIMPLIFIED**: Removed local PostgreSQL variables (`POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`)
 - ✅ **ADDED**: SSL mode requirement for Neon security
 
 ### 3. Entrypoint Script (`scripts/entrypoint.sh`)
+
 - ✅ **UPDATED**: `wait_for_db()` function for Neon cloud database
 - ✅ **REMOVED**: Local PostgreSQL container health checks
 - ✅ **ADDED**: SSL connection requirement
@@ -25,12 +28,14 @@ The SOPA Backend has been configured to use **Neon Cloud Database** directly ins
 - ✅ **OPTIMIZED**: Reduced wait times (cloud database is faster)
 
 ### 4. Deployment Documentation (`DEPLOYMENT_GUIDE.md`)
+
 - ✅ **UPDATED**: Production deployment steps for Neon
 - ✅ **ADDED**: Neon-specific configuration examples
 - ✅ **DOCUMENTED**: Benefits of using Neon cloud database
 - ✅ **SIMPLIFIED**: Firewall and networking requirements
 
 ### 5. Deployment Scripts
+
 - ✅ **NEW**: `deploy-neon.sh` - Linux deployment script
 - ✅ **NEW**: `deploy-neon.bat` - Windows deployment script
 - ✅ **ADDED**: Automatic validation of Neon configuration
@@ -38,18 +43,21 @@ The SOPA Backend has been configured to use **Neon Cloud Database** directly ins
 ## Benefits of Neon Migration
 
 ### 🎯 Immediate Benefits
+
 - **No Database Container Issues**: Eliminates PostgreSQL container startup problems
 - **Faster Deployment**: Cloud database is already available
 - **Better Reliability**: Managed database service with built-in redundancy
 - **SSL by Default**: Enhanced security with required SSL connections
 
 ### 🚀 Production Benefits
+
 - **Automatic Backups**: Neon handles database backups automatically
 - **Scalability**: Database can scale independently of your application
 - **Monitoring**: Built-in database monitoring and metrics
 - **Less Docker Complexity**: Fewer containers to manage
 
 ### 🔧 Development Benefits
+
 - **Consistent Environment**: Same database in dev and prod (if configured)
 - **Easier Debugging**: Database issues are separated from container issues
 - **Faster Startup**: No need to wait for local PostgreSQL to initialize
@@ -57,6 +65,7 @@ The SOPA Backend has been configured to use **Neon Cloud Database** directly ins
 ## How to Deploy
 
 ### Option 1: Using Deployment Scripts
+
 ```bash
 # Linux/macOS
 chmod +x deploy-neon.sh
@@ -67,6 +76,7 @@ deploy-neon.bat
 ```
 
 ### Option 2: Manual Deployment
+
 ```bash
 # 1. Configure environment
 cp .env.prod.example .env.prod
@@ -106,6 +116,7 @@ ENVIRONMENT=production
 ## Troubleshooting
 
 ### Connection Issues
+
 ```bash
 # Test Neon connectivity
 docker exec -it sopa_api_prod python3 -c "
@@ -116,10 +127,12 @@ print('✅ Neon connection successful!')
 ```
 
 ### SSL Certificate Issues
+
 - Ensure `?sslmode=require` is in your DATABASE_URL
 - Neon requires SSL connections for security
 
 ### Container Logs
+
 ```bash
 # Check container logs
 docker logs -f sopa_api_prod

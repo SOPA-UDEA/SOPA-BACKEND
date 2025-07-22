@@ -141,6 +141,7 @@ cp .env.prod.example .env.prod
 ```
 
 **Configuración .env.prod para Neon:**
+
 ```env
 # Neon Cloud Database - Tu database principal
 DATABASE_URL="postgresql://username:password@your-neon-host:5432/database?sslmode=require"
@@ -199,6 +200,7 @@ python3 scripts/alternative_seed.py
 ```
 
 **Ventajas de usar Neon Cloud Database:**
+
 - ✅ No hay contenedor PostgreSQL local que pueda fallar
 - ✅ Base de datos gestionada con backups automáticos
 - ✅ Escalabilidad automática

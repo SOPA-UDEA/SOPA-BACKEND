@@ -15,7 +15,7 @@ async def test_get_academic_schedule(client):
 
 @pytest.mark.asyncio
 async def test_create_academic_schedule_by_id(client):
-    response = await client.post("/academic_schedule/create", json={"semester": "2023-2"})
+    response = await client.post("/academic_schedule/create", json={"semester": "2023-2", "pensumsIds": [1]})
     assert response.status_code == 201
 
     data = response.json()

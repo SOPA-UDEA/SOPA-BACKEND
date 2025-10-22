@@ -1,12 +1,16 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 
 class Classroom(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int = Field(..., description="Unique identifier for the classroom")
-    capacity: Optional[int] = Field(None,description="Maximum number of students in the classroom")
+    capacity: Optional[int] = Field(None, description="Maximum number of students in the classroom")
     location: str = Field(..., max_length=255, description="Location of the classroom")
+    #REVISAR ITEMS REPETIDOS
     ownDepartment: bool = Field(..., description="Indicates if the classroom is owned by the department")
     virtualMode: bool = Field(..., description="Indicates if the classroom is virtual")
+    ownDepartment: Optional[bool] = Field(None, description="Indicates if the classroom is owned by the department")
+    virtualMode: Optional[bool] = Field(None, description="Indicates if the classroom is virtual")
     enabled: Optional[bool] = Field(None, description="Indicates if the classroom is enabled")
     isPointer: Optional[bool] = Field(None, description="Indicates if the classroom is a pointer classroom")
     hasRoom: Optional[bool] = Field(None, description="Indicates if the classroom has a room associated with it")
@@ -15,7 +19,7 @@ class ClassroomRequest(BaseModel):
     capacity: Optional[int] = Field(None, description="Maximum number of students in the classroom")
     location: str = Field(..., max_length=255, description="Location of the classroom")
     ownDepartment: bool = Field(..., description="Indicates if the classroom is owned by the department")
-    virtualMode: bool = Field(..., description="Indicates if the classroom is virtual")
+    virtualMode: bool = Field(..., description="Indicates if the classroom is virtual")
     enabled: Optional[bool] = Field(None, description="Indicates if the classroom is enabled")
     isPointer: Optional[bool] = Field(None, description="Indicates if the classroom is a pointer classroom")
     hasRoom: Optional[bool] = Field(None, description="Indicates if the classroom has a room associated with it")

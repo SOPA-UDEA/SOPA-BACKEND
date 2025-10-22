@@ -3,7 +3,12 @@ import pandas as pd
 from src.modules.pensum.models import PensumResponse
 
 async def get_all_pensums():
-    return await database.pensum.find_many()
+    return await database.pensum.find_many(
+        order=[
+            {"academicProgramId": "asc"},
+            {"version": "asc"},
+        ]
+    )
 
 async def get_pensum_by_id(pensumId: int) -> PensumResponse:
     return await database.pensum.find_first(where={"id": pensumId},

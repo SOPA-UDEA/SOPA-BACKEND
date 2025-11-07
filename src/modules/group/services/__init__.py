@@ -21,7 +21,6 @@ async def get_group_by_code_and_subject_code_and_academicSchedulePensumId(
         }
     )
 
-
 async def add_group(data: GroupRequest):
     return await database.group.create(data=data.model_dump())
 

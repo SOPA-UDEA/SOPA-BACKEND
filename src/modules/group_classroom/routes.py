@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from pydantic import BaseModel
 from typing import List
 from fastapi import HTTPException
 from fastapi import UploadFile, File, Form
@@ -9,14 +10,15 @@ from src.modules.group_classroom.models import (
     CollisionRequest,
     GroupNotificationResponse,
 )
-from src.modules.group_classroom.services import get_all_message_group_classroom
+from src.database import database
+from src.modules.group_classroom.services import get_all_message_group_classroom, validate_classroom_assignment, assign_classroom_to_group
 from src.modules.group_classroom.services.upload_excel import upload_excel
 from src.modules.group_classroom.services.update_excel import update_excel
 from src.modules.group_classroom.services.export_excel import (
     export_group_classrooms_to_excel,
 )
 from src.modules.group_classroom.services.check_collision import check_collision
-from src.modules.group_classroom.services import get_specific_group_classroom
+from src.modules.group_classroom.services import get_specific_group_classroom 
 from src.modules.group_classroom.services.check_mirror_group import check_mirror_group
 from src.modules.group_classroom.services.check_schedule_or_classroom_modified import (
     check_schedule_or_classroom_modified,
@@ -178,3 +180,40 @@ async def find_all_message_group_classroom(group_id: int):
         return messages
     except HTTPException as e:
         return JSONResponse(content={"error": e.detail}, status_code=e.status_code)
+
+class AssignClassroomRequest(BaseModel):
+    groupId: int
+    classroomId: int
+
+class ConflictItem(BaseModel):
+    groupId: int
+    schedule: str
+
+class ValidationResponse(BaseModel):
+    conflicts: List[ConflictItem]
+
+class ClassroomLite(BaseModel):
+    id: int
+    location: str
+    capacity: int | None = None
+
+@router.get("/owned-classrooms", response_model=List[ClassroomLite])
+async def owned_classrooms():
+    rows = await database.classroom.find_many(
+        where={"ownDepartment": True, "enabled": True, "isPointer": False},
+        order={"location": "asc"}
+    )
+    return rows
+
+@router.post("/assign-classroom/validate", response_model=ValidationResponse)
+async def validate_assign_classroom(payload: AssignClassroomRequest):
+    conflicts = await validate_classroom_assignment(payload.groupId, payload.classroomId)
+    return {"conflicts": conflicts}
+
+@router.put("/assign-classroom")
+async def assign_classroom(payload: AssignClassroomRequest):
+    conflicts = await validate_classroom_assignment(payload.groupId, payload.classroomId)
+    if conflicts:
+        raise HTTPException(status_code=409, detail={"conflicts": conflicts})
+    msg = await assign_classroom_to_group(payload.groupId, payload.classroomId)
+    return {"message": msg}

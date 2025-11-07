@@ -1,5 +1,5 @@
 from src.database import database
-from typing import List
+from typing import List, Tuple
 from src.modules.group_classroom.models import (
     GroupClassroomRequest,
     MessageGroupClassroomRequest,
@@ -182,3 +182,53 @@ async def find_group_classroom_by_id(group_classroom_id: int) -> GroupClassroomR
             "mainClassroom": True,
         },
     )
+
+def _parse_slots(raw: str) -> List[Tuple[str, int, int]]:
+    s = (raw or "").strip().upper().replace(" ", "")
+    i = 0
+    while i < len(s) and not s[i].isdigit():
+        i += 1
+    days = list(s[:i])
+    times = s[i:]
+    if "-" not in times:
+        return []
+    start, end = times.split("-")
+    if not (start.isdigit() and end.isdigit()):
+        return []
+    a = int(start)
+    b = int(end)
+    return [(d, a, b) for d in days]
+
+def _overlap(a: Tuple[str, int, int], b: Tuple[str, int, int]) -> bool:
+    return a[0] == b[0] and a[1] < b[2] and b[1] < a[2]
+
+async def validate_classroom_assignment(group_id: int, classroom_id: int) -> List[dict]:
+    target_rows = await database.classroom_x_group.find_many(where={"groupId": group_id})
+    target_slots: List[Tuple[str, int, int]] = []
+    for r in target_rows:
+        target_slots.extend(_parse_slots(r.mainSchedule))
+    if not target_slots:
+        return []
+    existing = await database.classroom_x_group.find_many(
+        where={"mainClassroomId": classroom_id, "groupId": {"not": group_id}}
+    )
+    conflicts = []
+    for row in existing:
+        slots = _parse_slots(row.mainSchedule)
+        if not slots:
+            continue
+        for s1 in target_slots:
+            for s2 in slots:
+                if _overlap(s1, s2):
+                    conflicts.append({"groupId": row.groupId, "schedule": row.mainSchedule})
+                    break
+            else:
+                continue
+            break
+    return conflicts
+
+async def assign_classroom_to_group(group_id: int, classroom_id: int) -> str:
+    rows = await database.classroom_x_group.find_many(where={"groupId": group_id})
+    for r in rows:
+        await database.classroom_x_group.update(where={"id": r.id}, data={"mainClassroomId": classroom_id})
+    return "classroom updated"

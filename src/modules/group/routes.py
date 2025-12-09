@@ -165,6 +165,50 @@ async def update_group_schedule(group_id: int, schedules: list[str]):
         return "schedule updated successfuly"
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
+    
+@router.put("/update/classroom/{group_id}", status_code=status.HTTP_202_ACCEPTED)
+async def update_group_classroom(group_id: int):
+    try:
+        print(">>> update_group_classroom()", flush=True)
+
+        # 1. Traer el group
+        group = await get_group_by_id(group_id)
+        print("Group:", group, flush=True)
+
+        # 2. Recuperar los schedules asociados
+        schedules = await database.classroom_x_group.find_many(
+            where={"groupId": group_id}
+        )
+        print("Schedules:", schedules, flush=True)
+
+        if not schedules:
+            raise ValueError("El grupo no tiene horarios asignados.")
+
+        schedule = schedules[0].mainSchedule
+        print("Using schedule:", schedule, flush=True)
+
+        if schedule is None:
+            raise ValueError("El grupo tiene schedule NULL, no permitido.")
+
+        await delete_group_classroom(group_id)
+        print("Deleted old classroom", flush=True)
+
+        classroom_x_group = {
+            "mainSchedule": schedule,
+            "mainClassroomId": 3,
+            "groupId": group_id
+        }
+        print("Sending:", classroom_x_group, flush=True)
+
+        created = await create_classroom_x_group(classroom_x_group)
+        print("created:", created, flush=True)
+
+        return "Classroom updated successfully"
+
+    except Exception as e:
+        print("ERROR:", repr(e), flush=True)
+        raise HTTPException(status_code=422, detail=str(e))
+
 
 @router.post("/create-of/{group_id}", status_code=status.HTTP_201_CREATED)
 async def create_group_of(group_id: int):
